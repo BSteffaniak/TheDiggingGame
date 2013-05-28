@@ -501,7 +501,8 @@ public class Chunk implements Serializable
 		
 		while (calculateLightChunks.size() > 0)
 		{
-			calculateLightChunks.remove(0).lightingChanged = true;
+			Chunk chunk = calculateLightChunks.remove(0);
+//			chunk.lightingChanged = true;
 		}
 		
 		lightingChanged = true;
@@ -516,7 +517,7 @@ public class Chunk implements Serializable
 		{
 			return;
 		}
-		System.out.println(relativeX + ", " + relativeY);
+//		System.out.println(relativeX + ", " + relativeY);
 		
 		lightingBundle.beginEditingColors();
 		{
