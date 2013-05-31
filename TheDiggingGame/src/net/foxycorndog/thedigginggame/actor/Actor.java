@@ -403,7 +403,7 @@ public class Actor
 			GL.translate(x, y, -1);
 			GL.setColor(color[0], color[1], color[2], color[3]);
 			
-			bundle.render(GL.QUADS, sprites);
+			bundle.render(GL.TRIANGLES, sprites);
 		}
 		GL.popMatrix();
 	}
@@ -421,7 +421,7 @@ public class Actor
 		mx     = 0;
 		my     = 0;
 		
-		float spd = 5 * (sprinting ? 1.7f : 1);
+		float spd = 5  * (sprinting ? 1.7f  : 1);
 		float max = 55 * (sprinting ? 1.25f : 1);
 		
 		if (movingHorizontally && oldFacing == facing)
@@ -474,7 +474,7 @@ public class Actor
 		{
 			float speed = 3f * delta;
 			
-			onGround = !tryMove(0, -speed);
+			onGround    = !tryMove(0, -speed);
 		}
 	}
 }

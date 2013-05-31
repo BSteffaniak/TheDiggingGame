@@ -59,7 +59,7 @@ public class Chunk implements Serializable
 	public static final int		LAYER_COUNT			= CHUNK_SIZE * CHUNK_SIZE;
 	public static final int		VERTEX_SIZE			= 2;
 	public static final int		TILE_COUNT			= LAYER_COUNT * 3;
-	public static final int		CHUNK_VERT_COUNT	= TILE_COUNT * 4 * 3;
+	public static final int		CHUNK_VERT_COUNT	= TILE_COUNT * 3 * 2 * 3;
 	public static final int		BACKGROUND			= 0, MIDDLEGROUND = 1, FOREGROUND = 2;
 	
 	static
@@ -73,7 +73,7 @@ public class Chunk implements Serializable
 		
 		black = new Texture(img);
 		
-		verticesBuffer = new Buffer(4 * 3 * CHUNK_SIZE * CHUNK_SIZE * VERTEX_SIZE);
+		verticesBuffer = new Buffer(3 * 2 * 3 * CHUNK_SIZE * CHUNK_SIZE * VERTEX_SIZE);
 		
 		verticesBuffer.beginEditing();
 		{
@@ -240,15 +240,18 @@ public class Chunk implements Serializable
 		this.relativeX = rx;
 		this.relativeY = ry;
 		
-		this.colors    = new float[4 * 4 * LAYER_COUNT];
+		this.colors    = new float[3 * 2 * 4 * LAYER_COUNT];
 		
 		texturesBuffer = new Buffer(2 * CHUNK_VERT_COUNT);
 		
 //		float data[] = new float[colorsBuffer.getSize()];
 		
-		for (int i = 0; i < colors.length; i++)
+		for (int i = 0; i < colors.length; i += 4)
 		{
-			colors[i] = 1;
+			colors[i + 0] = 1;
+			colors[i + 1] = 1;
+			colors[i + 2] = 1;
+			colors[i + 3] = 0;
 		}
 		
 //		colorsBuffer.beginEditing();
@@ -259,13 +262,13 @@ public class Chunk implements Serializable
 		
 		chunkBundle = new Bundle(verticesBuffer, texturesBuffer, null, VERTEX_SIZE);
 		
-		lightingBundle = new Bundle(CHUNK_SIZE * CHUNK_SIZE * 4, 2, true, true);
+		lightingBundle = new Bundle(CHUNK_SIZE * CHUNK_SIZE * 3 * 2, 2, true, true);
 		
 		lightingBundle.beginEditingTextures();
 		{
 			for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 			{
-				lightingBundle.addTextures(black.getImageOffsets());
+				lightingBundle.addTextures(GL.genRectTextures(black.getImageOffsets()));
 			}
 		}
 		lightingBundle.endEditingTextures();
@@ -285,6 +288,8 @@ public class Chunk implements Serializable
 		newTiles = new ArrayList<NewTile>();
 		
 		generateHooks = new ArrayList<Thread>();
+		
+		updateLighting(true);
 	}
 	
 	/**
@@ -409,107 +414,110 @@ public class Chunk implements Serializable
 		return tiles[layer * LAYER_COUNT + x + y * CHUNK_SIZE];
 	}
 	
-	/**
-	 * Calculates all of the lighting in the Chunk.
-	 */
-	public void calculateLighting(boolean force)
-	{
-		if (!force && !lightingChanged)
-		{
-			return;
-		}
-		
-//		colors   = new float[4 * 4 * LAYER_COUNT];
-//		bgColors = new float[4 * 4 * LAYER_COUNT];
-		
-		for (int i = 0; i < LAYER_COUNT; i++)
-		{
-			int x = i % CHUNK_SIZE;
-			int y = i / CHUNK_SIZE;
-			
-			Tile bgTile = tiles[i];
-			Tile mgTile = tiles[LAYER_COUNT + i];
-			Tile fgTile = tiles[LAYER_COUNT * 2 + i];
-			
-			float   lightness = 1;
-			
-			int offset = i * 4 * 4;
-			
-			int index = y + 1;
-			
-			Tile above = null;
-			
-			boolean chunkAvailable = map.isChunkAt(this, x, index);
-			
-			while (chunkAvailable && lightness > 0)
-			{
-				above = map.getTile(this, x, index, MIDDLEGROUND);
-				
-				if (above != null)
-				{
-					lightness -= 0.18f * (1 - above.getTransparency());
-				}
-				
-				chunkAvailable = map.isChunkAt(this, x, ++index);
-			}
-			
-			setRGBA(1, 1, 1, 1 - lightness, offset);
-		}
-		
-		calculateLightChunks = new ArrayList<Chunk>();
-		
-		for (int i = 0; i < LAYER_COUNT; i++)
-		{
-			int   x      = i % CHUNK_SIZE;
-			int   y      = i / CHUNK_SIZE;
-			
-			Tile  bgTile = tiles[i];
-			Tile  mgTile = tiles[LAYER_COUNT + i];
-			Tile  fgTile = tiles[LAYER_COUNT * 2 + i];
-			
-			float light  = 0;
-			
-			if (bgTile != null) light = bgTile.getLight() > light ? bgTile.getLight() : light;
-			if (mgTile != null) light = mgTile.getLight() > light ? mgTile.getLight() : light;
-			if (fgTile != null) light = fgTile.getLight() > light ? fgTile.getLight() : light;
-			
-			if (light > 0)
-			{
-				int ceilLight = (int)Math.ceil(light) + 1;
-				
-				int x2        = 0;
-				int y2        = 0;
-				
-				for (int y3 = 0; y3 < ceilLight; y3++)
-				{
-					for (int x3 = 0; x3 < ceilLight; x3++)
-					{
-						x2          = (int)(x + x3 - (light / 2));
-						y2          = (int)(y + y3 - (light / 2));
-						
-						double dist = distance(x, y, x2, y2);
-						
-						float  dif  = -(float)(((light/2) - dist) / (light / 2));
-						
-						dif = dif > 0 ? 0 : dif;
-						
-						addRGBA(0, 0, 0, dif, x2, y2);
-					}
-				}
-			}
-		}
-		
-		while (calculateLightChunks.size() > 0)
-		{
-			Chunk chunk = calculateLightChunks.remove(0);
-//			chunk.lightingChanged = true;
-		}
-		
-		lightingChanged = true;
-	}
+//	/**
+//	 * Calculates all of the lighting in the Chunk.
+//	 */
+//	public void calculateLighting(boolean force)
+//	{
+//		if (!force && !lightingChanged)
+//		{
+//			return;
+//		}
+//		
+////		colors   = new float[4 * 4 * LAYER_COUNT];
+////		bgColors = new float[4 * 4 * LAYER_COUNT];
+//		
+//		for (int i = 0; i < LAYER_COUNT; i++)
+//		{
+//			int x = i % CHUNK_SIZE;
+//			int y = i / CHUNK_SIZE;
+//			
+//			Tile bgTile = tiles[i];
+//			Tile mgTile = tiles[LAYER_COUNT + i];
+//			Tile fgTile = tiles[LAYER_COUNT * 2 + i];
+//			
+//			float   lightness = 1;
+//			
+//			int offset = i * 4 * 4;
+//			
+//			int index = y + 1;
+//			
+//			Tile above = null;
+//			
+//			boolean chunkAvailable = map.isChunkAt(this, x, index);
+//			
+//			while (chunkAvailable && lightness > 0)
+//			{
+//				above = map.getTile(this, x, index, MIDDLEGROUND);
+//				
+//				if (above != null)
+//				{
+//					lightness -= 0.18f * (1 - above.getTransparency());
+//				}
+//				
+//				chunkAvailable = map.isChunkAt(this, x, ++index);
+//			}
+//			
+//			setRGBA(1, 1, 1, 1 - lightness, offset);
+//		}
+//		
+//		calculateLightChunks = new ArrayList<Chunk>();
+//		
+//		for (int i = 0; i < LAYER_COUNT; i++)
+//		{
+//			int   x      = i % CHUNK_SIZE;
+//			int   y      = i / CHUNK_SIZE;
+//			
+//			Tile  bgTile = tiles[i];
+//			Tile  mgTile = tiles[LAYER_COUNT + i];
+//			Tile  fgTile = tiles[LAYER_COUNT * 2 + i];
+//			
+//			float light  = 0;
+//			
+//			if (bgTile != null) light = bgTile.getLight() > light ? bgTile.getLight() : light;
+//			if (mgTile != null) light = mgTile.getLight() > light ? mgTile.getLight() : light;
+//			if (fgTile != null) light = fgTile.getLight() > light ? fgTile.getLight() : light;
+//			
+//			if (light > 0)
+//			{
+//				int ceilLight = (int)Math.ceil(light) + 1;
+//				
+//				int x2        = 0;
+//				int y2        = 0;
+//				
+//				for (int y3 = 0; y3 < ceilLight; y3++)
+//				{
+//					for (int x3 = 0; x3 < ceilLight; x3++)
+//					{
+//						x2          = (int)(x + x3 - (light / 2));
+//						y2          = (int)(y + y3 - (light / 2));
+//						
+//						double dist = distance(x, y, x2, y2);
+//						
+//						float  dif  = -(float)(((light/2) - dist) / (light / 2));
+//						
+//						dif = dif > 0 ? 0 : dif;
+//						
+//						addRGBA(0, 0, 0, dif, x2, y2);
+//					}
+//				}
+//			}
+//		}
+//		
+//		while (calculateLightChunks.size() > 0)
+//		{
+//			Chunk chunk = calculateLightChunks.remove(0);
+////			chunk.lightingChanged = true;
+//		}
+//		
+//		lightingChanged = true;
+//	}
 
 	/**
 	 * Updates all of the lighting in the Chunk and puts it into action.
+	 * 
+	 * @param force Whether or not to force the action of updating the
+	 * 		lighting buffers.
 	 */
 	public void updateLighting(boolean force)
 	{
@@ -531,26 +539,26 @@ public class Chunk implements Serializable
 //		bgColors = null;
 	}
 	
-	/**
-	 * Set the RGBA values for a float array.
-	 * 
-	 * @param colors The float array to set the values on.
-	 * @param r The red component.
-	 * @param g The green component.
-	 * @param b The blue component.
-	 * @param a The alpha component.
-	 * @param offset The offset in the array to set the values at.
-	 */
-	private void setRGBA(float r, float g, float b, float a, int offset)
-	{
-		for (int j = 0; j < 4 * 4; j += 4)
-		{
-			colors[offset + j + 0] = r;
-			colors[offset + j + 1] = g;
-			colors[offset + j + 2] = b;
-			colors[offset + j + 3] = a;
-		}
-	}
+//	/**
+//	 * Set the RGBA values for a float array.
+//	 * 
+//	 * @param colors The float array to set the values on.
+//	 * @param r The red component.
+//	 * @param g The green component.
+//	 * @param b The blue component.
+//	 * @param a The alpha component.
+//	 * @param offset The offset in the array to set the values at.
+//	 */
+//	private void setRGBA(float r, float g, float b, float a, int offset)
+//	{
+//		for (int j = 0; j < 4 * 4; j += 4)
+//		{
+//			colors[offset + j + 0] = r;
+//			colors[offset + j + 1] = g;
+//			colors[offset + j + 2] = b;
+//			colors[offset + j + 3] = a;
+//		}
+//	}
 	
 	/**
 	 * Add the RGBA values to the old RGBA values of the float array.
@@ -623,10 +631,10 @@ public class Chunk implements Serializable
 			float oldB = colors[offset + j + 2];
 			float oldA = colors[offset + j + 3];
 			
-			colors[offset + j + 0] = oldR > 1 ? 1 : oldR;
-			colors[offset + j + 1] = oldG > 1 ? 1 : oldG;
-			colors[offset + j + 2] = oldB > 1 ? 1 : oldB;
-			colors[offset + j + 3] = oldA > 1 ? 1 : oldA;
+//			colors[offset + j + 0] = oldR > 1 ? 1 : oldR;
+//			colors[offset + j + 1] = oldG > 1 ? 1 : oldG;
+//			colors[offset + j + 2] = oldB > 1 ? 1 : oldB;
+//			colors[offset + j + 3] = oldA > 1 ? 1 : oldA;
 		}
 	}
 	
@@ -690,10 +698,11 @@ public class Chunk implements Serializable
 		{
 			NewTile newTile = newTiles.get(i);
 			
+//			System.out.println(newTile);
 			int x      = newTile.x;
 			int y      = newTile.y;
 			
-			int offset = 4 * LAYER_COUNT * newTile.layer;
+			int offset = 3 * 2 * LAYER_COUNT * newTile.layer;
 			
 			Tile tile  = newTile.tile;
 			
@@ -725,7 +734,7 @@ public class Chunk implements Serializable
 				int x      = newTile.x;
 				int y      = newTile.y;
 				
-				int offset = 4 * LAYER_COUNT * newTile.layer * 2;
+				int offset = 3 * 2 * LAYER_COUNT * newTile.layer * 2;
 				
 				Tile tile  = newTile.tile;
 				
@@ -733,14 +742,14 @@ public class Chunk implements Serializable
 				
 				if (tile == null)
 				{
-					textures = new float[4 * 2];
+					textures = new float[3 * 2 * 2];
 				}
 				else
 				{
 					textures = GL.genRectTextures(Tile.getTerrainSprites().getImageOffsets(tile.getX(), tile.getY(), tile.getCols(), tile.getRows()));
 				}
 				
-				chunkBundle.setTextures(offset + (x + y * CHUNK_SIZE) * 4 * 2, textures);
+				chunkBundle.setTextures(offset + (x + y * CHUNK_SIZE) * 3 * 2 * 2, textures);
 			}
 		}
 		chunkBundle.endEditingTextures();
@@ -784,7 +793,7 @@ public class Chunk implements Serializable
 	{
 		calculateTiles();
 		updateTiles();
-		calculateLighting(false);
+//		calculateLighting(false);
 		updateLighting(false);
 	}
 	
@@ -815,7 +824,7 @@ public class Chunk implements Serializable
 
 			GL.translate(0, 0, 6);
 			
-			lightingBundle.render(GL.QUADS, black);
+			lightingBundle.render(GL.TRIANGLES, black);
 		}
 		GL.popMatrix();
 	}
@@ -831,7 +840,7 @@ public class Chunk implements Serializable
 			
 			GL.setColor(0.4f, 0.4f, 0.4f, 1);
 			
-			chunkBundle.render(GL.QUADS, 0, 4 * CHUNK_SIZE * CHUNK_SIZE, Tile.getTerrainSprites());
+			chunkBundle.render(GL.TRIANGLES, 0, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, Tile.getTerrainSprites());
 			
 			GL.setColor(1, 1, 1, 1);
 		}
@@ -845,7 +854,7 @@ public class Chunk implements Serializable
 	{
 		GL.pushMatrix();
 		{
-			chunkBundle.render(GL.QUADS, 4 * CHUNK_SIZE * CHUNK_SIZE, 4 * CHUNK_SIZE * CHUNK_SIZE, Tile.getTerrainSprites());
+			chunkBundle.render(GL.TRIANGLES, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, Tile.getTerrainSprites());
 		}
 		GL.popMatrix();
 	}
@@ -859,7 +868,7 @@ public class Chunk implements Serializable
 		{
 			GL.translate(0, 0, 5);
 			
-			chunkBundle.render(GL.QUADS, 4 * CHUNK_SIZE * CHUNK_SIZE * 2, 4 * CHUNK_SIZE * CHUNK_SIZE, Tile.getTerrainSprites());
+			chunkBundle.render(GL.TRIANGLES, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE * 2, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, Tile.getTerrainSprites());
 		}
 		GL.popMatrix();
 	}

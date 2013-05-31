@@ -92,7 +92,8 @@ public class Map
 			{
 				public void run(Chunk chunk)
 				{
-					chunk.calculateLighting(false);
+//					chunk.calculateLighting(false);
+					//TODO: I did this too.
 				}
 			});
 		}
@@ -458,7 +459,8 @@ public class Map
 				
 				for (int i = chunks.size() - 1; i >= 0; i--)
 				{
-					chunks.remove(i).calculateLighting(true);
+//					chunks.remove(i).calculateLighting(true);
+					//TODO: i did this
 				}
 			}
 		}.start();
@@ -960,7 +962,8 @@ public class Map
 		{
 			public void run(Chunk chunk)
 			{
-				chunk.calculateLighting(true);
+//				chunk.calculateLighting(true);
+				//TODO: Oh, and this
 				chunk.updateLighting(true);
 			}
 		});

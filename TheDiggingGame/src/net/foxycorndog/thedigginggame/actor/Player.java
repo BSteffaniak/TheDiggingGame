@@ -51,7 +51,7 @@ public class Player extends Actor
 			e.printStackTrace();
 		}
 		
-		Bundle bundle = new Bundle(4 * 6 * 4, 2, true, false);
+		Bundle bundle = new Bundle(3 * 2 * 6 * 4, 2, true, false);
 		
 		bundle.beginEditingVertices();
 		{
@@ -197,16 +197,16 @@ public class Player extends Actor
 	
 	private void renderAppendages(Bundle bundle, SpriteSheet sprites, int facing, float rotation)
 	{
-		int offset = facing * 4 * 6;
+		int offset = facing * 3 * 2 * 6;
 		
 		GL.translate(0, Math.abs(rotation) / 23f, 0);
 		
-		renderHead(0 + offset, bundle, sprites, 0, facing);
-		renderRightArm(4 + offset, bundle, sprites, rotation / 2, facing);
-		renderTorso(4 * 2 + offset, bundle, sprites, 0, facing);
-		renderLeftArm(4 * 3 + offset, bundle, sprites, -rotation / 2, facing);
-		renderRightLeg(4 * 4 + offset, bundle, sprites, rotation, facing);
-		renderLeftLeg(4 * 5 + offset, bundle, sprites, -rotation, facing);
+		renderHead    (3 * 2 * 0 + offset, bundle, sprites,  0,            facing);
+		renderRightArm(3 * 2 * 1 + offset, bundle, sprites,  rotation / 2, facing);
+		renderTorso   (3 * 2 * 2 + offset, bundle, sprites,  0,            facing);
+		renderLeftArm (3 * 2 * 3 + offset, bundle, sprites, -rotation / 2, facing);
+		renderRightLeg(3 * 2 * 4 + offset, bundle, sprites,  rotation,     facing);
+		renderLeftLeg (3 * 2 * 5 + offset, bundle, sprites, -rotation,     facing);
 	}
 
 	/**
@@ -243,7 +243,7 @@ public class Player extends Actor
 				}
 			}
 			
-			bundle.render(GL.QUADS, offset, 4, sprites);
+			bundle.render(GL.TRIANGLES, offset, 3 * 2, sprites);
 		}
 		GL.popMatrix();
 	}
@@ -282,7 +282,7 @@ public class Player extends Actor
 				}
 			}
 			
-			bundle.render(GL.QUADS, offset, 4, sprites);
+			bundle.render(GL.TRIANGLES, offset, 3 * 2, sprites);
 		}
 		GL.popMatrix();
 	}
@@ -321,7 +321,7 @@ public class Player extends Actor
 				}
 			}
 			
-			bundle.render(GL.QUADS, offset, 4, sprites);
+			bundle.render(GL.TRIANGLES, offset, 3 * 2, sprites);
 		}
 		GL.popMatrix();
 	}
@@ -360,7 +360,7 @@ public class Player extends Actor
 				}
 			}
 				
-			bundle.render(GL.QUADS, offset, 4, sprites);
+			bundle.render(GL.TRIANGLES, offset, 3 * 2, sprites);
 		}
 		GL.popMatrix();
 	}
@@ -399,7 +399,7 @@ public class Player extends Actor
 				}
 			}
 			
-			bundle.render(GL.QUADS, offset, 4, sprites);
+			bundle.render(GL.TRIANGLES, offset, 3 * 2, sprites);
 		}
 		GL.popMatrix();
 	}
@@ -438,7 +438,7 @@ public class Player extends Actor
 				}
 			}
 			
-			bundle.render(GL.QUADS, offset, 4, sprites);
+			bundle.render(GL.TRIANGLES, offset, 3 * 2, sprites);
 		}
 		GL.popMatrix();
 	}
@@ -539,7 +539,7 @@ public class Player extends Actor
 					slot = slots[i];
 				}
 				
-				bundle.render(GL.QUADS, slot);
+				bundle.render(GL.TRIANGLES, slot);
 				
 				GL.translate(slot.getWidth(), 0, 0);
 			}

@@ -47,7 +47,7 @@ public class Cursor
 		
 		texture = new Texture(img, false);
 		
-		bundle = new Bundle(4, 2, true, false);
+		bundle = new Bundle(3 * 2, 2, true, false);
 		
 		bundle.beginEditingVertices();
 		{
@@ -75,7 +75,7 @@ public class Cursor
 		{
 			GL.translate(x, y, z);
 			
-			bundle.render(GL.QUADS, texture);
+			bundle.render(GL.TRIANGLES, texture);
 		}
 		GL.popMatrix();
 	}
