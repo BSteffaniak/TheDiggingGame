@@ -390,65 +390,16 @@ public class Chunk
 			{
 				if (oldTile.emitsLight())
 				{
-					float light   = oldTile.getLight();
-					
-					int ceilLight = (int)Math.ceil(light) + 1;
-					
-					int x2        = 0;
-					int y2        = 0;
-					
-					for (int y3 = 0; y3 < ceilLight; y3++)
-					{
-						for (int x3 = 0; x3 < ceilLight; x3++)
-						{
-							x2          = (int)(x + x3 - (light / 2));
-							y2          = (int)(y + y3 - (light / 2));
-							
-							double dist = distance(x, y, x2, y2);
-							
-							float  dif  = -(float)(((light/2) - dist) / (light / 2));
-							
-							dif = dif > 0 ? 0 : dif;
-							
-							addRGBA(0, 0, 0, -dif, x2, y2, LIGHT);
-						}
-					}
+					emitLight(x, y, -oldTile.getLight());
 				}
-				
-//				float shadow = calculateShadow(x, y);
-//				
-//				setAlpha(shadow, x, y - 1);
-//				
-//				lightingChanged = true;
 			}
 		}
+		// Else if the Tile was added.
 		else
 		{
 			if (tile.emitsLight())
 			{
-				float light   = tile.getLight();
-				
-				int ceilLight = (int)Math.ceil(light) + 1;
-				
-				int x2        = 0;
-				int y2        = 0;
-				
-				for (int y3 = 0; y3 < ceilLight; y3++)
-				{
-					for (int x3 = 0; x3 < ceilLight; x3++)
-					{
-						x2          = (int)(x + x3 - (light / 2));
-						y2          = (int)(y + y3 - (light / 2));
-						
-						double dist = distance(x, y, x2, y2);
-						
-						float  dif  = -(float)(((light/2) - dist) / (light / 2));
-						
-						dif = dif > 0 ? 0 : dif;
-						
-						addRGBA(0, 0, 0, dif, x2, y2, LIGHT);
-					}
-				}
+				emitLight(x, y, tile.getLight());
 			}
 		}
 		
@@ -488,6 +439,48 @@ public class Chunk
 		}
 		
 		return tiles[index];
+	}
+	
+	private void emitLight(int x, int y, float intensity)
+	{
+		float light     = Math.abs(intensity);
+		
+		int   sign      = sign(intensity);
+		
+		int   ceilLight = (int)Math.ceil(light) + 1;
+		
+		int   x2        = 0;
+		int   y2        = 0;
+		
+		for (int y3 = 0; y3 < ceilLight; y3++)
+		{
+			for (int x3 = 0; x3 < ceilLight; x3++)
+			{
+				x2          = (int)(x + x3 - (light / 2));
+				y2          = (int)(y + y3 - (light / 2));
+				
+				double dist = distance(x, y, x2, y2);
+				
+				float  dif  = -(float)(((light / 2) - dist) / (light / 2));
+				
+				dif = dif > 0 ? 0 : dif;
+				
+				dif *= sign;
+				
+				addRGBA(0, 0, 0, dif, x2, y2, LIGHT);
+			}
+		}
+	}
+	
+	/**
+	 * Return the sign of the number. (-1 if negative, or 1 if positive)
+	 * 
+	 * @param num The number to get the sign of.
+	 * @return The sign of the number.
+	 */
+	private int sign(float num)
+	{
+		return num < 0 ? -1 : 1;
 	}
 	
 	/**
