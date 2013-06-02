@@ -48,6 +48,8 @@ public class Launcher extends GameStarter
 
 	private long				loadStart;
 	
+	private	String				clientVersion;
+	
 	private Object				gameInstance;
 	
 	private Font				font;
@@ -64,10 +66,10 @@ public class Launcher extends GameStarter
 
 //	private GameInterface		gameInterface;
 	
-	private static final String	resourcesLocation = locateResources();
+	private	static final String	resourcesLocation = locateResources();
 	
-	public static final String	VERSION		= "v0.1";
-	public static final String	SERVER_URL	= "http://www.thedigginggame.co.nf/";
+	public	static final String	VERSION		= "0.1";
+	public	static final String	SERVER_URL	= "http://www.thedigginggame.co.nf/";
 	
 	private static final String locateResources()
 	{
@@ -126,7 +128,7 @@ public class Launcher extends GameStarter
 		Frame.create(800, 600);
 //		Frame.setVSyncEnabled(true);
 		Frame.setResizable(true);
-		Frame.setVSyncEnabled(true);
+//		Frame.setVSyncEnabled(true);
 		
 		timeOutLength = 15;
 		
@@ -198,6 +200,10 @@ public class Launcher extends GameStarter
 					render2D = clazz.getDeclaredMethod("render2D", new Class[] {  });
 					render3D = clazz.getDeclaredMethod("render3D", new Class[] {  });
 					loop     = clazz.getDeclaredMethod("loop", new Class[] {  });
+
+					Method getVersion = clazz.getDeclaredMethod("getVersion", new Class[] {  });
+					
+					clientVersion = (String)getVersion.invoke(gameInstance, new Object[] {  });
 					
 					try
 					{
@@ -252,10 +258,10 @@ public class Launcher extends GameStarter
 	{
 		String lines[] = WebPage.getOutput(SERVER_URL + "clientVersion.txt");
 		
-//		if (lines[0].compareTo(gameInterface.getVersion()) > 0)
-//		{
-//			
-//		}
+		if (lines[0].compareTo(clientVersion) > 0)
+		{
+			clientUpdate = true;
+		}
 	}
 	
 	/**
@@ -269,16 +275,7 @@ public class Launcher extends GameStarter
 		
 		if (version.compareTo(VERSION) > 0)
 		{
-			boolean mandatory = Boolean.valueOf(lines[1]);
-			
-			if (mandatory)
-			{
-				System.out.println("needs update");
-			}
-			else
-			{
-				launcherUpdate = true;
-			}
+			launcherUpdate = true;
 		}
 	}
 	
@@ -344,6 +341,26 @@ public class Launcher extends GameStarter
 	}
 	
 	/**
+	 * Update the launcher to the latest version.
+	 */
+	private void updateLauncher()
+	{
+		
+		
+		launcherUpdate = false;
+	}
+	
+	/**
+	 * Update the client to the latest version.
+	 */
+	private void updateClient()
+	{
+		
+		
+		clientUpdate = false;
+	}
+	
+	/**
 	 * Initialize the data.
 	 */
 	public void init()
@@ -383,6 +400,25 @@ public class Launcher extends GameStarter
 					
 					updateMenu.dispose();
 					updateMenu = null;
+					
+					if (launcherUpdate)
+					{
+						if (yes)
+						{
+							updateLauncher();
+						}
+						
+						launcherUpdate = false;
+					}
+					else if (clientUpdate)
+					{
+						if (yes)
+						{
+							updateClient();
+						}
+						
+						clientUpdate = false;
+					}
 				}
 				else if (source == playOfflineMenu)
 				{
@@ -503,6 +539,32 @@ public class Launcher extends GameStarter
 		{
 			connecting = loaderThread.isAlive() || connecting;
 			
+			if (launcherUpdate)
+			{
+				playGame = false;
+				
+				if (updateMenu == null)
+				{
+					updateMenu = new DialogMenu("An update is ready for this launcher.\nDownload it?", font, null);
+					updateMenu.addDialogMenuListener(dialogMenuListener);
+					
+					mainMenu.setVisible(false);
+				}
+			}
+			
+			if (clientUpdate)
+			{
+				playGame = false;
+				
+				if (updateMenu == null)
+				{
+					updateMenu = new DialogMenu("An update is ready for the game client.\nDownload it?", font, null);
+					updateMenu.addDialogMenuListener(dialogMenuListener);
+					
+					mainMenu.setVisible(false);
+				}
+			}
+			
 			if (connecting && !playOffline)
 			{
 				if (playGame)
@@ -545,6 +607,7 @@ public class Launcher extends GameStarter
 							e.printStackTrace();
 						}
 						
+						System.out.println("done");
 //						System.exit(1);
 						
 						mainMenu.dispose();
@@ -563,19 +626,6 @@ public class Launcher extends GameStarter
 							mainMenu.setVisible(false);
 						}
 					}
-				}
-			}
-			
-			if (launcherUpdate)
-			{
-				if (updateMenu == null)
-				{
-					updateMenu = new DialogMenu("An update is ready for this launcher.\nDownload it?", font, null);
-					updateMenu.addDialogMenuListener(dialogMenuListener);
-					
-					mainMenu.setVisible(false);
-					
-					launcherUpdate = false;
 				}
 			}
 		}

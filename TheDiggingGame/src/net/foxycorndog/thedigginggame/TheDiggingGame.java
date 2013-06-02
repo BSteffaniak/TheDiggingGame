@@ -46,25 +46,25 @@ import net.foxycorndog.thedigginggame.tile.Tile;
  */
 public class TheDiggingGame
 {
-	private boolean			online;
+	private					boolean			online;
 	
-	private int				fps;
-	private int				editing;
-	private int				counter;
+	private					int				fps;
+	private					int				editing;
+	private					int				counter;
 	
-	private float			scale;
+	private					float			scale;
 	
-	private Cursor			cursor;
+	private					Cursor			cursor;
 	
-	private Player			player;
+	private					Player			player;
 	
-	private Font			font;
+	private					Font			font;
 	
-	private Map				map;
+	private					Map				map;
 	
-	private static String	resourcesLocation;
+	private	static			String			resourcesLocation;
 	
-	public static final String VERSION	= "0.1";
+	public	static	final	String			VERSION	= "0.1";
 	
 	/**
 	 * Main method for the game. First method ran.
@@ -315,7 +315,11 @@ public class TheDiggingGame
 		}
 		
 		int target  = Frame.getTargetFPS();
-		target      = target == 0 ? 60 : target;
+		
+		if (target == 0)
+		{
+			target = 60;
+		}
 		
 		float delta = 60f / (fps == 0 ? target : fps);
 		
@@ -327,24 +331,25 @@ public class TheDiggingGame
 			if (map.removeTile(cursorX, cursorY, editing))
 			{
 				map.updateChunkAt(cursorX, cursorY);
-				map.updateActorLighting();
 			}
 		}
 		else if (Mouse.isButtonDown(Mouse.RIGHT_MOUSE_BUTTON))
 		{
-			int cursorX  = cursor.getX();
-			int cursorY  = cursor.getY();
+			int cursorX      = cursor.getX();
+			int cursorY      = cursor.getY();
 			
-			int tileSize = Tile.getTileSize();
+			int tileSize     = Tile.getTileSize();
 			
-			Tile tile    = Tile.getTile("Torch");
+			Tile tile        = Tile.getTile("Torch");
 			
-			if (editing != Chunk.MIDDLEGROUND || !Intersects.rectangles(cursorX * tileSize, cursorY * tileSize, tile.getCols() * tileSize, tile.getRows() * tileSize, player.getX() + 1, player.getY(), player.getWidth() - 2, player.getHeight() - 1))
+			boolean canPlace = editing != Chunk.MIDDLEGROUND || (!tile.isCollidable() ||
+					!Intersects.rectangles(cursorX * tileSize, cursorY * tileSize, tile.getCols() * tileSize, tile.getRows() * tileSize, player.getX() + 1, player.getY(), player.getWidth() - 2, player.getHeight() - 1));
+			
+			if (canPlace)
 			{
 				if (map.addTile(tile, cursorX, cursorY, editing, false))
 				{
-					map.updateChunkAt(cursorX, cursorY);
-					map.updateActorLighting();
+					
 				}
 			}
 		}

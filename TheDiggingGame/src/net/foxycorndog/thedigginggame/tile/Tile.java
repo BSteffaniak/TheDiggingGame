@@ -20,21 +20,21 @@ import net.foxycorndog.thedigginggame.TheDiggingGame;
  * @version Feb 22, 2013 at 4:23:24 AM
  * @version	v0.2
  */
-public class Tile implements Serializable
+public class Tile
 {
-	private boolean							collidable;
+	private			boolean					collidable;
 	
-	private int								x, y;
-	private int								cols, rows;
+	private			int						x, y;
+	private			int						cols, rows;
 	
-	private float							transparency;
-	private	float							light;
+	private			float					transparency;
+	private			float					light;
 	
-	private static int						tileSize;
+	private	static	int						tileSize;
 	
-	private static SpriteSheet				terrainSprites;
+	private	static	SpriteSheet				terrainSprites;
 	
-	private static HashMap<String, Tile>	tiles;
+	private	static	HashMap<String, Tile>	tiles;
 	
 	static
 	{

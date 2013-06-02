@@ -13,6 +13,7 @@ import net.foxycorndog.jfoxylib.opengl.texture.Texture;
 import net.foxycorndog.jfoxylib.util.Bounds;
 import net.foxycorndog.jfoxylib.util.Intersects;
 import net.foxycorndog.jfoxylib.util.Point;
+import net.foxycorndog.jfoxyutil.Queue;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.actor.Actor;
 import net.foxycorndog.thedigginggame.tile.Tile;
@@ -28,46 +29,46 @@ import net.foxycorndog.thedigginggame.tile.Tile;
  * @version Mar 3, 2013 at 4:51:19 PM
  * @version	v0.1
  */
-public class Chunk implements Serializable
+public class Chunk
 {
-	private boolean				lightingChanged, tilesChanged;
+	private					boolean				lightingUpdated, tilesUpdated;
 	
-	private int					relativeX, relativeY;
+	private					int					relativeX, relativeY;
 	
-	private Buffer				texturesBuffer;
+	private					Buffer				texturesBuffer;
 	
-	private Bundle				chunkBundle;
-	private Bundle				lightingBundle;
+	private					Bundle				chunkBundle;
+	private					Bundle				lightingBundle;
 	
-	private Map					map;
+	private					Map					map;
 	
-	private float				colors[];
+	private					float				colors[], lights[], outputLight[];
 	
-	private Tile				tiles[];
+	private					Tile				tiles[];
 	
-	private ArrayList<Thread>	generateHooks;
+	private					ArrayList<Thread>	generateHooks;
 	
-	private ArrayList<NewTile>	newTiles;
+	private					Queue<NewTile>		tilesQueue;
+	private					Queue<Integer>		lightingQueue;
 	
-	private	ArrayList<Chunk>	calculateLightChunks;
+	private	static			Texture				black;
 	
-	private static Texture		black;
-	
-	private static Buffer		verticesBuffer;
+	private	static			Buffer				verticesBuffer;
 
-	public static final int		CHUNK_SIZE			= 32;
-	public static final int		LAYER_COUNT			= CHUNK_SIZE * CHUNK_SIZE;
-	public static final int		VERTEX_SIZE			= 2;
-	public static final int		TILE_COUNT			= LAYER_COUNT * 3;
-	public static final int		CHUNK_VERT_COUNT	= TILE_COUNT * 3 * 2 * 3;
-	public static final int		BACKGROUND			= 0, MIDDLEGROUND = 1, FOREGROUND = 2;
+	public	static	final	int					CHUNK_SIZE			= 32;
+	public	static	final	int					LAYER_COUNT			= CHUNK_SIZE * CHUNK_SIZE;
+	public	static	final	int					VERTEX_SIZE			= 2;
+	public	static	final	int					TILE_COUNT			= LAYER_COUNT * 3;
+	public	static	final	int					CHUNK_VERT_COUNT	= TILE_COUNT * 3 * 2 * 3;
+	public	static	final	int					BACKGROUND			= 0, MIDDLEGROUND = 1, FOREGROUND = 2;
+	public	static	final	int					LIGHT				= 0, COLOR = 1, OUTPUT = 2;
 	
 	static
 	{
 		BufferedImage img = new BufferedImage(Tile.getTileSize(), Tile.getTileSize(), BufferedImage.BITMASK);
 		
 		Graphics2D g = img.createGraphics();
-		g.setColor(Color.BLACK);
+		g.setColor(Color.WHITE);
 		g.fillRect(0, 0, img.getWidth(), img.getHeight());
 		g.dispose();
 		
@@ -235,24 +236,26 @@ public class Chunk implements Serializable
 	 */
 	public Chunk(Map map, int rx, int ry)
 	{
-		this.map       = map;
+		this.map         = map;
 		
-		this.relativeX = rx;
-		this.relativeY = ry;
+		this.relativeX   = rx;
+		this.relativeY   = ry;
 		
-		this.colors    = new float[3 * 2 * 4 * LAYER_COUNT];
+		this.colors      = new float[3 * 2 * LAYER_COUNT * 4];
+		this.lights      = new float[3 * 2 * LAYER_COUNT * 4];
+		this.outputLight = new float[3 * 2 * LAYER_COUNT * 4];
 		
-		texturesBuffer = new Buffer(2 * CHUNK_VERT_COUNT);
+		texturesBuffer   = new Buffer(2 * CHUNK_VERT_COUNT);
 		
 //		float data[] = new float[colorsBuffer.getSize()];
 		
-		for (int i = 0; i < colors.length; i += 4)
-		{
-			colors[i + 0] = 1;
-			colors[i + 1] = 1;
-			colors[i + 2] = 1;
-			colors[i + 3] = 0;
-		}
+//		for (int i = 0; i < colors.length; i += 4)
+//		{
+//			colors[i + 0] = 1;
+//			colors[i + 1] = 1;
+//			colors[i + 2] = 1;
+//			colors[i + 3] = 0;
+//		}
 		
 //		colorsBuffer.beginEditing();
 //		{
@@ -284,12 +287,17 @@ public class Chunk implements Serializable
 		}
 		lightingBundle.endEditingVertices();
 		
-		tiles    = new Tile[CHUNK_SIZE * CHUNK_SIZE * 3];
-		newTiles = new ArrayList<NewTile>();
+		tiles           = new Tile[CHUNK_SIZE * CHUNK_SIZE * 3];
+		tilesQueue      = new Queue<NewTile>();
 		
-		generateHooks = new ArrayList<Thread>();
+		lightingQueue   = new Queue<Integer>();
+		lightingQueue.setAllowDuplicates(false);
 		
-		updateLighting(true);
+		generateHooks   = new ArrayList<Thread>();
+		
+		lightingUpdated = false;
+		
+		updateLighting();
 	}
 	
 	/**
@@ -297,7 +305,7 @@ public class Chunk implements Serializable
 	 */
 	public void generate()
 	{
-		if (relativeY == 0 || relativeY < 0)
+		if (relativeY <= 0)
 		{
 			for (int y = 0; y < CHUNK_SIZE - 21; y++)
 			{
@@ -330,6 +338,7 @@ public class Chunk implements Serializable
 		}
 		
 		calculateTiles();
+		initLighting();
 		
 		while (generateHooks.size() > 0)
 		{
@@ -351,7 +360,7 @@ public class Chunk implements Serializable
 	}
 	
 	/**
-	 * Adds a Tile01 to the newTile01 queue. The update() method has to be
+	 * Adds a Tile to the newTile queue. The update() method has to be
 	 * called after this call to update the Buffers.
 	 * 
 	 * @param tile The tile to add to the queue.
@@ -359,46 +368,106 @@ public class Chunk implements Serializable
 	 * 		(0 - CHUNK_SIZE-1)
 	 * @param y The vertical location of the new Tile.
 	 * 		(0 - CHUNK_SIZE-1)
-	 * @return Whether a Tile01 was successfully added or not.
+	 * @return Whether a Tile was successfully added or not.
 	 */
 	public boolean addTile(Tile tile, int x, int y, int layer, boolean replace)
 	{
-		if (!replace && tiles[layer * LAYER_COUNT + (x + y * CHUNK_SIZE)] != null)
+		Tile oldTile = tiles[layer * LAYER_COUNT + (x + y * CHUNK_SIZE)];
+		
+		if (!replace && oldTile != null)
 		{
 			return false;
 		}
 		
-		boolean added = newTiles.add(new NewTile(tile, x, y, layer));
+		boolean added = tilesQueue.enqueue(new NewTile(tile, x, y, layer));
 		
-		lightingChanged = true;
-		tilesChanged = true;
+		lightingQueue.enqueue(x);
+		
+		// If the Tile was removed.
+		if (tile == null)
+		{
+			if (oldTile != null)
+			{
+				if (oldTile.emitsLight())
+				{
+					float light   = oldTile.getLight();
+					
+					int ceilLight = (int)Math.ceil(light) + 1;
+					
+					int x2        = 0;
+					int y2        = 0;
+					
+					for (int y3 = 0; y3 < ceilLight; y3++)
+					{
+						for (int x3 = 0; x3 < ceilLight; x3++)
+						{
+							x2          = (int)(x + x3 - (light / 2));
+							y2          = (int)(y + y3 - (light / 2));
+							
+							double dist = distance(x, y, x2, y2);
+							
+							float  dif  = -(float)(((light/2) - dist) / (light / 2));
+							
+							dif = dif > 0 ? 0 : dif;
+							
+							addRGBA(0, 0, 0, -dif, x2, y2, LIGHT);
+						}
+					}
+				}
+				
+//				float shadow = calculateShadow(x, y);
+//				
+//				setAlpha(shadow, x, y - 1);
+//				
+//				lightingChanged = true;
+			}
+		}
+		else
+		{
+			if (tile.emitsLight())
+			{
+				float light   = tile.getLight();
+				
+				int ceilLight = (int)Math.ceil(light) + 1;
+				
+				int x2        = 0;
+				int y2        = 0;
+				
+				for (int y3 = 0; y3 < ceilLight; y3++)
+				{
+					for (int x3 = 0; x3 < ceilLight; x3++)
+					{
+						x2          = (int)(x + x3 - (light / 2));
+						y2          = (int)(y + y3 - (light / 2));
+						
+						double dist = distance(x, y, x2, y2);
+						
+						float  dif  = -(float)(((light/2) - dist) / (light / 2));
+						
+						dif = dif > 0 ? 0 : dif;
+						
+						addRGBA(0, 0, 0, dif, x2, y2, LIGHT);
+					}
+				}
+			}
+		}
 		
 		return added;
 	}
 
 	/**
-	 * Removes a Tile01 from the Chunk at the specified location. Still
-	 * needs an update() call afterwards.
+	 * Removes a Tile from the Chunk at the specified location. Still
+	 * needs an update() call afterwards to update the Buffers.
 	 * 
 	 * @param x The horizontal location of the Tile.
 	 * 		(0 - CHUNK_SIZE-1)
 	 * @param y The vertical location of the Tile.
 	 * 		(0 - CHUNK_SIZE-1)
-	 * @return Whether a Tile01 was successfully removed or not.
+	 * @return Whether a Tile was successfully removed or not.
 	 */
 	public boolean removeTile(int x, int y, int layer)
 	{
-		if (tiles[layer * LAYER_COUNT + (x + y * CHUNK_SIZE)] == null)
-		{
-			return false;
-		}
-		
-		boolean removed = newTiles.add(new NewTile(null, x, y, layer));
-		
-		lightingChanged = true;
-		tilesChanged = true;
-		
-		return removed;
+		return addTile(null, x, y, layer, true);
 	}
 	
 	/**
@@ -411,56 +480,52 @@ public class Chunk implements Serializable
 	 */
 	public Tile getTile(int x, int y, int layer)
 	{
-		return tiles[layer * LAYER_COUNT + x + y * CHUNK_SIZE];
+		int index = layer * LAYER_COUNT + x + y * CHUNK_SIZE;
+		
+		if (index < 0 || index >= tiles.length)
+		{
+			throw new IndexOutOfBoundsException("The location (" + x + ", " + y + ") is out of bounds for the Chunk size (" + CHUNK_SIZE + ", " + CHUNK_SIZE + ")");
+		}
+		
+		return tiles[index];
 	}
 	
-//	/**
-//	 * Calculates all of the lighting in the Chunk.
-//	 */
-//	public void calculateLighting(boolean force)
-//	{
-//		if (!force && !lightingChanged)
-//		{
-//			return;
-//		}
-//		
-////		colors   = new float[4 * 4 * LAYER_COUNT];
-////		bgColors = new float[4 * 4 * LAYER_COUNT];
-//		
-//		for (int i = 0; i < LAYER_COUNT; i++)
-//		{
-//			int x = i % CHUNK_SIZE;
-//			int y = i / CHUNK_SIZE;
-//			
-//			Tile bgTile = tiles[i];
-//			Tile mgTile = tiles[LAYER_COUNT + i];
-//			Tile fgTile = tiles[LAYER_COUNT * 2 + i];
-//			
-//			float   lightness = 1;
-//			
-//			int offset = i * 4 * 4;
-//			
-//			int index = y + 1;
-//			
-//			Tile above = null;
-//			
-//			boolean chunkAvailable = map.isChunkAt(this, x, index);
-//			
-//			while (chunkAvailable && lightness > 0)
-//			{
-//				above = map.getTile(this, x, index, MIDDLEGROUND);
-//				
-//				if (above != null)
-//				{
-//					lightness -= 0.18f * (1 - above.getTransparency());
-//				}
-//				
-//				chunkAvailable = map.isChunkAt(this, x, ++index);
-//			}
-//			
-//			setRGBA(1, 1, 1, 1 - lightness, offset);
-//		}
-//		
+	/**
+	 * Combine the light and the color of the Tile at the specified
+	 * location (x, y).
+	 * 
+	 * @param x The horizontal location of the Tile.
+	 * @param y The vertical location of the Tile.
+	 */
+	private void combineLightsAndColor(int x, int y)
+	{
+		int index = (x + y * CHUNK_SIZE) * 3 * 2 * 4;
+		
+		float r = colors[index + 0] + lights[index + 0];
+		float g = colors[index + 1] + lights[index + 1];
+		float b = colors[index + 2] + lights[index + 2];
+		float a = colors[index + 3] + lights[index + 3];
+		
+		r = r < 0 ? 0 : (r > 1 ? 1 : r);
+		g = g < 0 ? 0 : (g > 1 ? 1 : g);
+		b = b < 0 ? 0 : (b > 1 ? 1 : b);
+		a = a < 0 ? 0 : (a > 1 ? 1 : a);
+		
+//		System.out.println(r + ", " + g + ", " + b + ", " + a);
+		
+		setRGBA(r, g, b, a, x, y, OUTPUT);
+	}
+	
+	/**
+	 * Initialize the lighting of a newly generated Chunk.
+	 */
+	public void initLighting()
+	{
+		for (int x = 0; x < CHUNK_SIZE; x++)
+		{
+			lightingQueue.enqueue(x);
+		}
+		
 //		calculateLightChunks = new ArrayList<Chunk>();
 //		
 //		for (int i = 0; i < LAYER_COUNT; i++)
@@ -509,9 +574,119 @@ public class Chunk implements Serializable
 //			Chunk chunk = calculateLightChunks.remove(0);
 ////			chunk.lightingChanged = true;
 //		}
-//		
-//		lightingChanged = true;
-//	}
+	}
+	
+	/**
+	 * Calculate the intensity of the shadow on the Tile at the specified
+	 * location.
+	 * 
+	 * @param x The horizontal location of the Tile.
+	 * @param y The vertical location of the Tile.
+	 * @return The intensity of the shadow given on the Tile.
+	 */
+	private float calculateShadow(int x, int y)
+	{
+		float shadow      = 0;
+		
+		int   index       = y + 1;
+		
+		Tile  above       = null;
+		
+		boolean available = map.isChunkAt(this, x, index);
+		
+		while (available)
+		{
+			above = map.getTile(this, x, index, MIDDLEGROUND);
+			
+			if (above != null)
+			{
+				shadow += 0.18f * (1 - above.getTransparency());
+			}
+			
+			available = map.isChunkAt(this, x, ++index);
+		}
+		
+		return shadow;
+	}
+	
+	/**
+	 * Calculate the intensity of the shadow given by the Tile at the
+	 * specified location to the specified depth under it.
+	 * 
+	 * @param x The horizontal location of the Tile.
+	 * @param y The vertical location of the Tile.
+	 * @param depth The depth to find the shadow of.
+	 * @return The intensity of the shadow given by the Tile at the
+	 * 		depth.
+	 */
+	private float calculateShadow(int x, int y, int depth)
+	{
+		float shadow = 0;
+		
+		Tile current = getTile(x, y, MIDDLEGROUND);
+		
+		for (int i = 0; i < depth; i++)
+		{
+			if (current != null)
+			{
+				shadow += 0.18f * (1 - current.getTransparency());
+			}
+			
+			current = getTile(x, y - i, MIDDLEGROUND);
+		}
+		
+		return shadow;
+	}
+	
+	/**
+	 * Calculate any of the uncalculated lighting values.
+	 */
+	public void calculateLighting()
+	{
+		// Skip out if the lighting is already calculated.
+		if (lightingQueue.isEmpty())
+		{
+			return;
+		}
+		
+		// Iterate through all of the uncalculated columns.
+		while (!lightingQueue.isEmpty())
+		{
+			int column   = lightingQueue.dequeue();
+			
+			float shadow = 0;
+			
+			for (int y = CHUNK_SIZE - 1; y >= 0; y--)
+			{
+				shadow = calculateShadow(column, y);
+				
+				if (shadow > 1)
+				{
+					shadow = 1;
+				}
+				
+				setAlpha(shadow, column, y, COLOR);
+				
+				combineLightsAndColor(column, y);
+			}
+			
+			// If the bottom of the Chunk is letting light through to
+			// the adjacent Chunk underneath, then update that one too.
+			if (shadow < 1)
+			{
+				Chunk below = map.getChunk(relativeX, relativeY - 1);
+				
+				if (below != null)
+				{
+					below.lightingQueue.enqueue(column);
+				}
+			}
+		}
+		
+		// Tell the Map that this Chunk is ready to have its buffers
+		// updated.
+		lightingUpdated = false;
+	}
 
 	/**
 	 * Updates all of the lighting in the Chunk and puts it into action.
@@ -519,49 +694,188 @@ public class Chunk implements Serializable
 	 * @param force Whether or not to force the action of updating the
 	 * 		lighting buffers.
 	 */
-	public void updateLighting(boolean force)
+	public void updateLighting()
 	{
-		if (!force && !lightingChanged)
+		if (lightingUpdated)
 		{
 			return;
 		}
-//		System.out.println(relativeX + ", " + relativeY);
 		
 		lightingBundle.beginEditingColors();
 		{
-			lightingBundle.setColors(0, colors);
+			lightingBundle.setColors(0, outputLight);
 		}
 		lightingBundle.endEditingColors();
 		
-		lightingChanged = false;
-		
-//		colors   = null;
-//		bgColors = null;
+		lightingUpdated = true;
 	}
 	
-//	/**
-//	 * Set the RGBA values for a float array.
-//	 * 
-//	 * @param colors The float array to set the values on.
-//	 * @param r The red component.
-//	 * @param g The green component.
-//	 * @param b The blue component.
-//	 * @param a The alpha component.
-//	 * @param offset The offset in the array to set the values at.
-//	 */
-//	private void setRGBA(float r, float g, float b, float a, int offset)
-//	{
-//		for (int j = 0; j < 4 * 4; j += 4)
-//		{
-//			colors[offset + j + 0] = r;
-//			colors[offset + j + 1] = g;
-//			colors[offset + j + 2] = b;
-//			colors[offset + j + 3] = a;
-//		}
-//	}
+	/**
+	 * Set the RGBA values of the float array for the square at the
+	 * specified location.
+	 * 
+	 * @param colors The float array to set the values of.
+	 * @param r The red component.
+	 * @param g The green component.
+	 * @param b The blue component.
+	 * @param a The alpha component.
+	 * @param x The horizontal location of the Tile to set the
+	 * 		values at.
+	 * @param y The vertical location of the Tile to set the
+	 * 		values at.
+	 * @param type The type of array to edit. The options include LIGHT,
+	 * 		COLOR, and OUTPUT.
+	 */
+	private void setRGBA(float r, float g, float b, float a, int x, int y, int type)
+	{
+		if (x < 0 || y < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE)
+		{
+			Bounds bounds = map.trimLocation(x, y, getRelativeX(), getRelativeY());
+			
+			x  = bounds.getX();
+			y  = bounds.getY();
+			
+			int rx = bounds.getWidth();
+			int ry = bounds.getHeight();
+			
+			Chunk chunk = map.getChunk(rx, ry);
+			
+			chunk.setRGBA(r, g, b, a, x, y, type);
+			
+//			if (!calculateLightChunks.contains(chunk))
+//			{
+//				calculateLightChunks.add(chunk);
+//			}
+			lightingQueue.enqueue(x);
+			
+			return;
+		}
+		
+		setRGBA(r, g, b, a, (x + y * CHUNK_SIZE) * 3 * 2 * 4, type);
+	}
 	
 	/**
-	 * Add the RGBA values to the old RGBA values of the float array.
+	 * Set the RGBA values for a float array.
+	 * 
+	 * @param colors The float array to set the values on.
+	 * @param r The red component.
+	 * @param g The green component.
+	 * @param b The blue component.
+	 * @param a The alpha component.
+	 * @param offset The offset in the array to set the values at.
+	 * @param type The type of array to edit. The options include LIGHT,
+	 * 		COLOR, and OUTPUT.
+	 */
+	private void setRGBA(float r, float g, float b, float a, int offset, int type)
+	{
+		float array[] = null;
+		
+		if (type == LIGHT)
+		{
+			array = lights;
+		}
+		else if (type == COLOR)
+		{
+			array = colors;
+		}
+		else if (type == OUTPUT)
+		{
+			array = outputLight;
+		}
+		else
+		{
+			throw new IllegalArgumentException("The type '" + type + "' is not an acceptable value. Please use Chunk.LIGHT, Chunk.COLOR or Chunk.OUTPUT.");
+		}
+		
+		for (int j = 0; j < 3 * 2 * 4; j += 4)
+		{
+			array[offset + j + 0] = r;
+			array[offset + j + 1] = g;
+			array[offset + j + 2] = b;
+			array[offset + j + 3] = a;
+		}
+	}
+	
+	/**
+	 * Set the Alpha value of the float array for the square at the
+	 * specified location.
+	 * 
+	 * @param colors The float array to set the alpha value of.
+	 * @param a The alpha component.
+	 * @param x The horizontal location of the Tile to set the
+	 * 		value at.
+	 * @param y The vertical location of the Tile to set the
+	 * 		value at.
+	 * @param type The type of array to edit. The options include LIGHT,
+	 * 		COLOR, and OUTPUT.
+	 */
+	private void setAlpha(float a, int x, int y, int type)
+	{
+		if (x < 0 || y < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE)
+		{
+			Bounds bounds = map.trimLocation(x, y, getRelativeX(), getRelativeY());
+			
+			x  = bounds.getX();
+			y  = bounds.getY();
+			
+			int rx = bounds.getWidth();
+			int ry = bounds.getHeight();
+			
+			Chunk chunk = map.getChunk(rx, ry);
+			
+			chunk.setAlpha(a, x, y, type);
+			
+//			if (!calculateLightChunks.contains(chunk))
+//			{
+//				calculateLightChunks.add(chunk);
+//			}
+			lightingQueue.enqueue(x);
+			
+			return;
+		}
+		
+		setAlpha(a, (x + y * CHUNK_SIZE) * 3 * 2 * 4, type);
+	}
+	
+	/**
+	 * Set the Alpha value for a float array.
+	 * 
+	 * @param colors The float array to set the value of.
+	 * @param a The alpha component.
+	 * @param offset The offset in the array to set the value at.
+	 * @param type The type of array to edit. The options include LIGHT,
+	 * 		COLOR, and OUTPUT.
+	 */
+	private void setAlpha(float a, int offset, int type)
+	{
+		float array[] = null;
+		
+		if (type == LIGHT)
+		{
+			array = lights;
+		}
+		else if (type == COLOR)
+		{
+			array = colors;
+		}
+		else if (type == OUTPUT)
+		{
+			array = outputLight;
+		}
+		else
+		{
+			throw new IllegalArgumentException("The type '" + type + "' is not an acceptable value. Please use Chunk.LIGHT, Chunk.COLOR or Chunk.OUTPUT.");
+		}
+		
+		for (int j = 0; j < 3 * 2 * 4; j += 4)
+		{
+			array[offset + j + 3] = a;
+		}
+	}
+	
+	/**
+	 * Add the RGBA values to the old RGBA values of the float array for
+	 * the square at the specified location.
 	 * 
 	 * @param colors The float array to add the values on.
 	 * @param r The red component.
@@ -572,38 +886,50 @@ public class Chunk implements Serializable
 	 * 		values at.
 	 * @param y The vertical location of the Tile to add the
 	 * 		values at.
+	 * @param type The type of array to edit. The options include LIGHT,
+	 * 		COLOR, and OUTPUT.
 	 */
-	private void addRGBA(float r, float g, float b, float a, int x, int y)
+	private void addRGBA(float r, float g, float b, float a, int x, int y, int type)
 	{
 		if (x < 0 || y < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE)
 		{
-			Chunk chunk = map.getChunkAt(this, x, y);
-			
-			Bounds bounds = map.checkNegativeLocation(x, y, getRelativeX(), getRelativeY());
+			Bounds bounds = map.trimLocation(x, y, getRelativeX(), getRelativeY());
 			
 			x  = bounds.getX();
 			y  = bounds.getY();
-
-			x %= Chunk.CHUNK_SIZE;
-			y %= Chunk.CHUNK_SIZE;
 			
-			System.out.println(x + ", " + y);
+			int rx = bounds.getWidth();
+			int ry = bounds.getHeight();
 			
-			chunk.addRGBA(r, g, b, a, x, y);
+			Chunk chunk = map.getChunk(rx, ry);
 			
-			if (!calculateLightChunks.contains(chunk))
+			if (chunk == null)
 			{
-				calculateLightChunks.add(chunk);
+				map.generateChunk(rx, ry);
+				
+				chunk = map.getChunk(rx, ry);
 			}
+			
+			chunk.addRGBA(r, g, b, a, x, y, type);
+			
+//			if (!calculateLightChunks.contains(chunk))
+//			{
+//				calculateLightChunks.add(chunk);
+//			}
 			
 			return;
 		}
 		
-		addRGBA(r, g, b, a, (x + y * CHUNK_SIZE) * 4 * 4);
+		lightingQueue.enqueue(x);
+		
+		int index = (x + y * CHUNK_SIZE) * 3 * 2 * 4;
+		
+		addRGBA(r, g, b, a, index, type);
 	}
 	
 	/**
-	 * Add the RGBA values to the old RGBA values of the float array.
+	 * Add the RGBA values to the old RGBA values of the float array for
+	 * the square at the specified offset.
 	 * 
 	 * @param colors The float array to add the values on.
 	 * @param r The red component.
@@ -611,25 +937,46 @@ public class Chunk implements Serializable
 	 * @param b The blue component.
 	 * @param a The alpha component.
 	 * @param offset The offset in the array to add the values at.
+	 * @param type The type of array to edit. The options include LIGHT,
+	 * 		COLOR, and OUTPUT.
 	 */
-	private void addRGBA(float r, float g, float b, float a, int offset)
+	private void addRGBA(float r, float g, float b, float a, int offset, int type)
 	{
-		if (offset < 0 || offset + 4 * 4 >= colors.length)
+		if (offset < 0 || offset + 3 * 2 * 4 > colors.length)
 		{
 			return;
 		}
 		
-		for (int j = 0; j < 4 * 4; j += 4)
+		float array[] = null;
+		
+		if (type == LIGHT)
 		{
-			colors[offset + j + 0] += r;
-			colors[offset + j + 1] += g;
-			colors[offset + j + 2] += b;
-			colors[offset + j + 3] += a;
+			array = lights;
+		}
+		else if (type == COLOR)
+		{
+			array = colors;
+		}
+		else if (type == OUTPUT)
+		{
+			array = outputLight;
+		}
+		else
+		{
+			throw new IllegalArgumentException("The type '" + type + "' is not an acceptable value. Please use Chunk.LIGHT, Chunk.COLOR or Chunk.OUTPUT.");
+		}
+		
+		for (int j = 0; j < 3 * 2 * 4; j += 4)
+		{
+			array[offset + j + 0] += r;
+			array[offset + j + 1] += g;
+			array[offset + j + 2] += b;
+			array[offset + j + 3] += a;
 			
-			float oldR = colors[offset + j + 0];
-			float oldG = colors[offset + j + 1];
-			float oldB = colors[offset + j + 2];
-			float oldA = colors[offset + j + 3];
+//			float oldR = colors[offset + j + 0];
+//			float oldG = colors[offset + j + 1];
+//			float oldB = colors[offset + j + 2];
+//			float oldA = colors[offset + j + 3];
 			
 //			colors[offset + j + 0] = oldR > 1 ? 1 : oldR;
 //			colors[offset + j + 1] = oldG > 1 ? 1 : oldG;
@@ -687,32 +1034,28 @@ public class Chunk implements Serializable
 	 */
 	public void calculateTiles()
 	{
-		if (!tilesChanged)
+		if (tilesQueue.isEmpty())
 		{
 			return;
 		}
 		
-		int size = newTiles.size();
+		int size = tilesQueue.size();
 		
 		for (int i = size - 1; i >= 0; i--)
 		{
-			NewTile newTile = newTiles.get(i);
+			NewTile newTile = tilesQueue.peek(i);
 			
-//			System.out.println(newTile);
-			int x      = newTile.x;
-			int y      = newTile.y;
+			int     x       = newTile.x;
+			int     y       = newTile.y;
 			
-			int offset = 3 * 2 * LAYER_COUNT * newTile.layer;
+			Tile    tile    = newTile.tile;
 			
-			Tile tile  = newTile.tile;
+			Tile    oldTile = tiles[LAYER_COUNT * newTile.layer + (x + y * CHUNK_SIZE)];
 			
 			tiles[LAYER_COUNT * newTile.layer + (x + y * CHUNK_SIZE)] = tile;
+			
+			tilesUpdated = false;
 		}
-		
-//		if (size > 0)
-//		{
-//			tilesChanged = false;
-//		}
 	}
 	
 	/**
@@ -720,16 +1063,16 @@ public class Chunk implements Serializable
 	 */
 	public void updateTiles()
 	{
-		if (!tilesChanged)
+		if (tilesUpdated)
 		{
 			return;
 		}
 		
 		chunkBundle.beginEditingTextures();
 		{
-			while (newTiles.size() > 0)
+			while (!tilesQueue.isEmpty())
 			{
-				NewTile newTile = newTiles.remove(0);
+				NewTile newTile = tilesQueue.dequeue();
 				
 				int x      = newTile.x;
 				int y      = newTile.y;
@@ -754,7 +1097,7 @@ public class Chunk implements Serializable
 		}
 		chunkBundle.endEditingTextures();
 		
-		tilesChanged = false;
+		tilesUpdated = true;
 	}
 	
 	/**
@@ -793,8 +1136,8 @@ public class Chunk implements Serializable
 	{
 		calculateTiles();
 		updateTiles();
-//		calculateLighting(false);
-		updateLighting(false);
+		calculateLighting();
+		updateLighting();
 	}
 	
 	/**
@@ -923,20 +1266,20 @@ public class Chunk implements Serializable
 	
 	public Intersections getIntersections(Actor actor)
 	{
-		float actorX    = actor.getX() + 1;
-		float actorY    = actor.getY();
-		int actorWidth  = actor.getWidth() - 2;
-		int actorHeight = actor.getHeight() - 1;
+		float actorX      = actor.getX() + 1;
+		float actorY      = actor.getY();
+		int   actorWidth  = actor.getWidth() - 2;
+		int   actorHeight = actor.getHeight() - 1;
 		
-		float chunkX    = getX();
-		float chunkY    = getY();
+		float chunkX      = getX();
+		float chunkY      = getY();
 		
-		int startX = 0;
-		int startY = 0;
-		int width  = 0;
-		int height = 0;
+		int startX        = 0;
+		int startY        = 0;
+		int width         = 0;
+		int height        = 0;
 		
-		int tileSize = Tile.getTileSize();
+		int tileSize      = Tile.getTileSize();
 		
 		startX = (int)((actorX - chunkX)  / tileSize) - 1;
 		startY = (int)((actorY - chunkY)  / tileSize) - 1;
@@ -975,15 +1318,15 @@ public class Chunk implements Serializable
 	 */
 	public boolean isCollision(Actor actor)
 	{
-		float actorX    = actor.getX() + 1;
-		float actorY    = actor.getY();
-		int actorWidth  = actor.getWidth() - 2;
-		int actorHeight = actor.getHeight() - 1;
+		float actorX      = actor.getX() + 1;
+		float actorY      = actor.getY();
+		int   actorWidth  = actor.getWidth() - 2;
+		int   actorHeight = actor.getHeight() - 3;
 		
-		float chunkX    = getX();
-		float chunkY    = getY();
+		float chunkX      = getX();
+		float chunkY      = getY();
 		
-		int tileSize = Tile.getTileSize();
+		int tileSize      = Tile.getTileSize();
 		
 		if (inChunk(actor))
 		{

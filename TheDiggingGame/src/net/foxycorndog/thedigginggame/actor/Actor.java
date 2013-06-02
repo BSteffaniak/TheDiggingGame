@@ -470,7 +470,8 @@ public class Actor
 				jumping = false;
 			}
 		}
-		else
+		
+		if (!jumping)
 		{
 			float speed = 3f * delta;
 			

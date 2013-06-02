@@ -19,6 +19,7 @@ import net.foxycorndog.jfoxylib.opengl.shader.Shader;
 import net.foxycorndog.jfoxylib.util.Bounds;
 import net.foxycorndog.jfoxylib.util.Intersects;
 import net.foxycorndog.jfoxylib.util.Point;
+import net.foxycorndog.jfoxyutil.Queue;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.actor.Actor;
 import net.foxycorndog.thedigginggame.map.Chunk.Intersections;
@@ -37,6 +38,7 @@ import net.foxycorndog.thedigginggame.tile.Tile;
 public class Map
 {
 	private boolean			collision;
+	private	boolean			generatingChunks;
 	
 	private float			x, y;
 	
@@ -44,13 +46,15 @@ public class Map
 	
 	private Shader			lighting;
 	
-	private Thread			lightingThread;
+	private Thread			lightingThread, generatorThread;
 	
 	private LightingClass	lightingInstance;
 	
 	private HashMap<Integer, HashMap<Integer, Chunk>> chunks;
 	
 	private ArrayList<Actor>	actors;
+	
+	private	Queue<Chunk>		chunkQueue;
 	
 	/**
 	 * Class that has a method that is to be implemented. Used
@@ -109,11 +113,54 @@ public class Map
 		
 		lightingInstance = new LightingClass();
 		
-		chunks    = new HashMap<Integer, HashMap<Integer, Chunk>>();
+		chunks     = new HashMap<Integer, HashMap<Integer, Chunk>>();
 		
-		actors    = new ArrayList<Actor>();
+		actors     = new ArrayList<Actor>();
 		
-		this.game = game;
+		this.game  = game;
+		
+		chunkQueue = new Queue<Chunk>();
+		
+		generatorThread = new Thread()
+		{
+			public void run()
+			{
+				while (true)
+				{
+					generatingChunks = false;
+					
+					synchronized (this)
+					{
+						try
+						{
+							wait();
+						}
+						catch (InterruptedException e)
+						{
+							e.printStackTrace();
+						}
+					}
+					
+					generatingChunks = true;
+					
+					for (int i = chunkQueue.size() - 1; i >= 0; i--)
+					{
+						chunkQueue.peek(i).generate();
+					}
+					
+					while (!chunkQueue.isEmpty())
+					{
+						Chunk chunk = chunkQueue.dequeue();
+//						chunk.calculateLighting(true);
+						//TODO: i did this
+					}
+					
+//					System.exit(0);
+				}
+			}
+		};
+		
+		generatorThread.start();
 		
 //		lightingThread = new Thread("Lighting")
 //		{
@@ -193,58 +240,6 @@ public class Map
 				actors.get(i).setFocused(false);
 			}
 		}
-	}
-	
-	/**
-	 * Update all of the Actors colors according to where they are
-	 * in the Map.
-	 */
-	public void updateActorLighting()
-	{
-//		iterateChunks(new Task()
-//		{
-//			public void run(Chunk chunk)
-//			{
-//				int tileSize = Tile.getTileSize();
-//				
-//				for (int i = actors.size() - 1; i >= 0; i--)
-//				{
-//					Actor actor = actors.get(i);
-//					
-//					if (chunk.inChunk(actor))
-//					{
-//						Intersections intersections = chunk.getIntersections(actor);
-//						
-//						Point points[] = intersections.getPoints();
-//						
-//						float min = 1;
-//						
-//						for (int y = 1; y < intersections.getHeight() - 1; y++)
-//						{
-//							for (int x = 1; x < intersections.getWidth(); x++)
-//							{
-//								Point point = points[x + y * intersections.getWidth()];
-//								
-//								int x2 = point.getX();
-//								int y2 = point.getY();
-//								
-////								if (Intersects.rectangles(x2, y2, width, height, 0, 0, tileSize, tileSize))
-////								{
-//									float col = chunk.getLightness(x2, y2);
-//									
-//									if (col <= min)
-//									{
-//										min = col;
-//									}
-////								}
-//							}
-//						}
-//						
-//						actor.setColor(min, min, min, 1);
-//					}
-//				}
-//			}
-//		});
 	}
 	
 	/**
@@ -330,14 +325,14 @@ public class Map
 		{
 			Chunk chunk = new Chunk(this, rx, ry);
 			
-			chunk.generate();
-			
 			if (!chunks.containsKey(rx))
 			{
 				chunks.put(rx, new HashMap<Integer, Chunk>());
 			}
 			
 			chunks.get(rx).put(ry, chunk);
+			
+			chunk.generate();
 			
 			return true;
 		}
@@ -362,16 +357,16 @@ public class Map
 		{
 			Chunk chunk = new Chunk(this, rx, ry);
 			
-			chunk.addGenerateHook(hook);
-			
-			chunk.generate();
-			
 			if (!chunks.containsKey(rx))
 			{
 				chunks.put(rx, new HashMap<Integer, Chunk>());
 			}
 			
 			chunks.get(rx).put(ry, chunk);
+			
+			chunk.addGenerateHook(hook);
+			
+			chunk.generate();
 			
 			return true;
 		}
@@ -404,8 +399,6 @@ public class Map
 		int x = startX;
 		int y = startY;
 		
-		final ArrayList<Chunk> chunks = new ArrayList<Chunk>();
-		
 		while (y <= height)
 		{
 			x = startX;
@@ -432,14 +425,14 @@ public class Map
 				{
 					Chunk chunk = new Chunk(this, rx, ry);
 					
-					chunks.add(chunk);
-					
-					if (!this.chunks.containsKey(rx))
+					if (!chunks.containsKey(rx))
 					{
-						this.chunks.put(rx, new HashMap<Integer, Chunk>());
+						chunks.put(rx, new HashMap<Integer, Chunk>());
 					}
 					
-					this.chunks.get(rx).put(ry, chunk);
+					chunkQueue.enqueue(chunk);
+				
+					chunks.get(rx).put(ry, chunk);
 				}
 				
 				x += chunkWidth;
@@ -448,22 +441,13 @@ public class Map
 			y += chunkHeight;
 		}
 		
-		new Thread()
+		if (!chunkQueue.isEmpty() && !generatingChunks)
 		{
-			public void run()
+			synchronized (generatorThread)
 			{
-				for (int i = chunks.size() - 1; i >= 0; i--)
-				{
-					chunks.get(i).generate();
-				}
-				
-				for (int i = chunks.size() - 1; i >= 0; i--)
-				{
-//					chunks.remove(i).calculateLighting(true);
-					//TODO: i did this
-				}
+				generatorThread.notify();
 			}
-		}.start();
+		}
 	}
 	
 	/**
@@ -504,7 +488,7 @@ public class Map
 		int rx = x / Chunk.CHUNK_SIZE + chunk.getRelativeX();
 		int ry = y / Chunk.CHUNK_SIZE + chunk.getRelativeY();
 		
-		Bounds bounds = checkNegativeLocation(x, y, rx, ry);
+		Bounds bounds = trimLocation(x, y, rx, ry);
 		
 		x  = bounds.getX();
 		y  = bounds.getY();
@@ -528,12 +512,12 @@ public class Map
 	 * @return The Chunk instance that is located at the specified
 	 * 		location relative to the specified Chunk if there is one.
 	 */
-	public Chunk getChunkAt(Chunk chunk, int x, int y)
+	public Chunk getChunkAt(int x, int y)
 	{
-		int rx = x / Chunk.CHUNK_SIZE + chunk.getRelativeX();
-		int ry = y / Chunk.CHUNK_SIZE + chunk.getRelativeY();
+		int rx = x / Chunk.CHUNK_SIZE;
+		int ry = y / Chunk.CHUNK_SIZE;
 		
-		Bounds bounds = checkNegativeLocation(x, y, rx, ry);
+		Bounds bounds = trimLocation(x, y, rx, ry);
 		
 		x  = bounds.getX();
 		y  = bounds.getY();
@@ -541,6 +525,38 @@ public class Map
 		ry = bounds.getHeight();
 		
 		y %= Chunk.CHUNK_SIZE;
+		
+		if (isChunkAt(rx, ry))
+		{
+			return getChunk(rx, ry);
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Get the Chunk instance that is located at the specified location
+	 * relative to the specified Chunk if there is one.
+	 * 
+	 * @param Chunk The Chunk to search relative to.
+	 * @param x The relative horizontal location of the location
+	 * 		to get the Chunk.
+	 * @param y The relative vertical location of the location
+	 * 		to get the Chunk.
+	 * @return The Chunk instance that is located at the specified
+	 * 		location relative to the specified Chunk if there is one.
+	 */
+	public Chunk getChunkAt(Chunk chunk, int x, int y)
+	{
+		int rx = x / Chunk.CHUNK_SIZE + chunk.getRelativeX();
+		int ry = y / Chunk.CHUNK_SIZE + chunk.getRelativeY();
+		
+		Bounds bounds = trimLocation(x, y, rx, ry);
+		
+		x  = bounds.getX();
+		y  = bounds.getY();
+		rx = bounds.getWidth();
+		ry = bounds.getHeight();
 		
 		if (isChunkAt(rx, ry))
 		{
@@ -615,17 +631,15 @@ public class Map
 	{
 		Tile tile = null;
 		
-		int rx = x / Chunk.CHUNK_SIZE + chunk.getRelativeX();
-		int ry = y / Chunk.CHUNK_SIZE + chunk.getRelativeY();
+		int rx = chunk.getRelativeX();
+		int ry = chunk.getRelativeY();
 		
-		Bounds bounds = checkNegativeLocation(x, y, rx, ry);
+		Bounds bounds = trimLocation(x, y, rx, ry);
 		
 		x  = bounds.getX();
 		y  = bounds.getY();
 		rx = bounds.getWidth();
 		ry = bounds.getHeight();
-		
-		y %= Chunk.CHUNK_SIZE;
 		
 		if (isChunkAt(rx, ry))
 		{
@@ -652,10 +666,10 @@ public class Map
 	{
 		int chunkSize = Chunk.CHUNK_SIZE;
 		
-		int rx = x / chunkSize;
-		int ry = y / chunkSize;
+		int rx = 0;
+		int ry = 0;
 		
-		Bounds bounds = checkNegativeLocation(x, y, rx, ry);
+		Bounds bounds = trimLocation(x, y, rx, ry);
 		
 		x  = bounds.getX();
 		y  = bounds.getY();
@@ -686,10 +700,10 @@ public class Map
 	{
 		int chunkSize = Chunk.CHUNK_SIZE;
 		
-		int rx = x / chunkSize;
-		int ry = y / chunkSize;
+		int rx = 0;
+		int ry = 0;
 		
-		Bounds bounds = checkNegativeLocation(x, y, rx, ry);
+		Bounds bounds = trimLocation(x, y, rx, ry);
 		
 		x  = bounds.getX();
 		y  = bounds.getY();
@@ -714,12 +728,10 @@ public class Map
 	 */
 	public void updateChunkAt(int x, int y)
 	{
-		int chunkSize = Chunk.CHUNK_SIZE;
+		int rx = 0;
+		int ry = 0;
 		
-		int rx = x / chunkSize;
-		int ry = y / chunkSize;
-		
-		Bounds bounds = checkNegativeLocation(x, y, rx, ry);
+		Bounds bounds = trimLocation(x, y, rx, ry);
 		
 		x  = bounds.getX();
 		y  = bounds.getY();
@@ -735,45 +747,108 @@ public class Map
 	}
 	
 	/**
-	 * Calculate the correct relative location given the information.
+	 * Trim the specified location to the correct relative location
+	 * and local location.
 	 * 
-	 * @param x The Tile-wise horizontal location.
-	 * @param y The Tile-wise vertical location.
-	 * @param rx The Chunk-wise horizontal location.
-	 * @param ry The Chunk-wise vertical location.
-	 * @return The correct relative locations and offsets.
+	 * @param x The local horizontal location relative to the relative
+	 * 		location (tile-wise).
+	 * @param y The local vertical location relative to the relative
+	 * 		location (tile-wise).
+	 * @param rx The relative horizontal location of the Chunk
+	 * 		(Chunk-wise).
+	 * @param ry The relative vertical location of the Chunk
+	 * 		(Chunk-wise).
+	 * @return A Bounds instance describing the trimmed (x, y, rx, ry)
+	 * 		values.
 	 */
-	public Bounds checkNegativeLocation(int x, int y, int rx, int ry)
+	public Bounds trimLocation(int x, int y, int rx, int ry)
 	{
-		int chunkSize = Chunk.CHUNK_SIZE;
+		int cs = Chunk.CHUNK_SIZE;
 		
 		if (x < 0)
 		{
-			rx--;
+			rx -= (-x / cs) + 1;
 			
-			x = -rx * chunkSize + x;
+			x = cs - (-x % cs);
 			
-			if (x % chunkSize == 0)
+			if (x == 32)
 			{
-				rx++;
 				x = 0;
+				
+				rx++;
 			}
 		}
+		else
+		{
+			rx += x / cs;
+			
+			x %= cs;
+		}
+		
 		if (y < 0)
 		{
-			ry--;
+			ry -= (-y / cs) + 1;
 			
-			y = -ry * chunkSize + y;
+			y = cs - (-y % cs);
 			
-			if (y % chunkSize == 0)
+			if (y == 32)
 			{
-				ry++;
 				y = 0;
+				
+				ry++;
 			}
 		}
+		else
+		{
+			ry += y / cs;
+			
+			y %= cs;
+		}
+		
 		
 		return new Bounds(x, y, rx, ry);
 	}
+	
+//	/**
+//	 * Calculate the correct relative location given the information.
+//	 * 
+//	 * @param x The Tile-wise horizontal location.
+//	 * @param y The Tile-wise vertical location.
+//	 * @param rx The Chunk-wise horizontal location.
+//	 * @param ry The Chunk-wise vertical location.
+//	 * @return The correct relative locations and offsets.
+//	 */
+//	public Bounds checkNegativeLocation(int x, int y, int rx, int ry)
+//	{
+//		int chunkSize = Chunk.CHUNK_SIZE;
+//		
+//		if (x < 0)
+//		{
+//			rx--;
+//			
+//			x = -rx * chunkSize + x;
+//			
+//			if (x % chunkSize == 0)
+//			{
+//				rx++;
+//				x = 0;
+//			}
+//		}
+//		if (y < 0)
+//		{
+//			ry--;
+//			
+//			y = -ry * chunkSize + y;
+//			
+//			if (y % chunkSize == 0)
+//			{
+//				ry++;
+//				y = 0;
+//			}
+//		}
+//		
+//		return new Bounds(x, y, rx, ry);
+//	}
 	
 	/**
 	 * Method that uses the iterates through each of the Chunks and
@@ -964,7 +1039,7 @@ public class Map
 			{
 //				chunk.calculateLighting(true);
 				//TODO: Oh, and this
-				chunk.updateLighting(true);
+				chunk.updateLighting();
 			}
 		});
 	}
@@ -974,6 +1049,11 @@ public class Map
 	 */
 	public void update()
 	{
+		if (!chunkQueue.isEmpty())
+		{
+			return;
+		}
+		
 		iterateChunks(new Task()
 		{
 			public void run(Chunk chunk)
