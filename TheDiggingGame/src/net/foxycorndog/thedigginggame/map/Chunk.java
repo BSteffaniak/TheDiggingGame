@@ -16,7 +16,7 @@ import net.foxycorndog.jfoxylib.util.Point;
 import net.foxycorndog.jfoxyutil.Queue;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.actor.Actor;
-import net.foxycorndog.thedigginggame.tile.Tile;
+import net.foxycorndog.thedigginggame.item.tile.Tile;
 
 /**
  * Class that holds the information for each of the chunks.

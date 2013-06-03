@@ -31,9 +31,9 @@ import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxylib.util.Intersects;
 import net.foxycorndog.thedigginggame.actor.Player;
 import net.foxycorndog.thedigginggame.components.Cursor;
+import net.foxycorndog.thedigginggame.item.tile.Tile;
 import net.foxycorndog.thedigginggame.map.Chunk;
 import net.foxycorndog.thedigginggame.map.Map;
-import net.foxycorndog.thedigginggame.tile.Tile;
 
 /**
  * Main class for the Game. Starts the game.

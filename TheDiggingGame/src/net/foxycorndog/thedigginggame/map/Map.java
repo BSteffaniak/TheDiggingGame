@@ -22,8 +22,8 @@ import net.foxycorndog.jfoxylib.util.Point;
 import net.foxycorndog.jfoxyutil.Queue;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.actor.Actor;
+import net.foxycorndog.thedigginggame.item.tile.Tile;
 import net.foxycorndog.thedigginggame.map.Chunk.Intersections;
-import net.foxycorndog.thedigginggame.tile.Tile;
 
 /**
  * Class that holds the information of everything on the map. Such things
