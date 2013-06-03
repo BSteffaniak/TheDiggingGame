@@ -314,7 +314,7 @@ public class TheDiggingGame
 			Frame.setTitle("FPS: " + fps);
 		}
 		
-		int target  = Frame.getTargetFPS();
+		int target = Frame.getTargetFPS();
 		
 		if (target == 0)
 		{
@@ -335,10 +335,10 @@ public class TheDiggingGame
 		}
 		else if (Mouse.isButtonDown(Mouse.RIGHT_MOUSE_BUTTON))
 		{
-			int cursorX      = cursor.getX();
-			int cursorY      = cursor.getY();
+			int  cursorX     = cursor.getX();
+			int  cursorY     = cursor.getY();
 			
-			int tileSize     = Tile.getTileSize();
+			int  tileSize    = Tile.getTileSize();
 			
 			Tile tile        = Tile.getTile("Torch");
 			

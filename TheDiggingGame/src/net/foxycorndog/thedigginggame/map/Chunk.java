@@ -518,55 +518,6 @@ public class Chunk
 		{
 			lightingQueue.enqueue(x);
 		}
-		
-//		calculateLightChunks = new ArrayList<Chunk>();
-//		
-//		for (int i = 0; i < LAYER_COUNT; i++)
-//		{
-//			int   x      = i % CHUNK_SIZE;
-//			int   y      = i / CHUNK_SIZE;
-//			
-//			Tile  bgTile = tiles[i];
-//			Tile  mgTile = tiles[LAYER_COUNT + i];
-//			Tile  fgTile = tiles[LAYER_COUNT * 2 + i];
-//			
-//			float light  = 0;
-//			
-//			if (bgTile != null) light = bgTile.getLight() > light ? bgTile.getLight() : light;
-//			if (mgTile != null) light = mgTile.getLight() > light ? mgTile.getLight() : light;
-//			if (fgTile != null) light = fgTile.getLight() > light ? fgTile.getLight() : light;
-//			
-//			if (light > 0)
-//			{
-//				int ceilLight = (int)Math.ceil(light) + 1;
-//				
-//				int x2        = 0;
-//				int y2        = 0;
-//				
-//				for (int y3 = 0; y3 < ceilLight; y3++)
-//				{
-//					for (int x3 = 0; x3 < ceilLight; x3++)
-//					{
-//						x2          = (int)(x + x3 - (light / 2));
-//						y2          = (int)(y + y3 - (light / 2));
-//						
-//						double dist = distance(x, y, x2, y2);
-//						
-//						float  dif  = -(float)(((light/2) - dist) / (light / 2));
-//						
-//						dif = dif > 0 ? 0 : dif;
-//						
-//						addRGBA(0, 0, 0, dif, x2, y2);
-//					}
-//				}
-//			}
-//		}
-//		
-//		while (calculateLightChunks.size() > 0)
-//		{
-//			Chunk chunk = calculateLightChunks.remove(0);
-////			chunk.lightingChanged = true;
-//		}
 	}
 	
 	/**
@@ -735,10 +686,6 @@ public class Chunk
 			
 			chunk.setRGBA(r, g, b, a, x, y, type);
 			
-//			if (!calculateLightChunks.contains(chunk))
-//			{
-//				calculateLightChunks.add(chunk);
-//			}
 			lightingQueue.enqueue(x);
 			
 			return;
@@ -818,10 +765,6 @@ public class Chunk
 			
 			chunk.setAlpha(a, x, y, type);
 			
-//			if (!calculateLightChunks.contains(chunk))
-//			{
-//				calculateLightChunks.add(chunk);
-//			}
 			lightingQueue.enqueue(x);
 			
 			return;
@@ -905,11 +848,6 @@ public class Chunk
 			
 			chunk.addRGBA(r, g, b, a, x, y, type);
 			
-//			if (!calculateLightChunks.contains(chunk))
-//			{
-//				calculateLightChunks.add(chunk);
-//			}
-			
 			return;
 		}
 		
@@ -965,16 +903,6 @@ public class Chunk
 			array[offset + j + 1] += g;
 			array[offset + j + 2] += b;
 			array[offset + j + 3] += a;
-			
-//			float oldR = colors[offset + j + 0];
-//			float oldG = colors[offset + j + 1];
-//			float oldB = colors[offset + j + 2];
-//			float oldA = colors[offset + j + 3];
-			
-//			colors[offset + j + 0] = oldR > 1 ? 1 : oldR;
-//			colors[offset + j + 1] = oldG > 1 ? 1 : oldG;
-//			colors[offset + j + 2] = oldB > 1 ? 1 : oldB;
-//			colors[offset + j + 3] = oldA > 1 ? 1 : oldA;
 		}
 	}
 	
