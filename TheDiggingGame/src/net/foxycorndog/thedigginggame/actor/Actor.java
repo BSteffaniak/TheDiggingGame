@@ -4,6 +4,7 @@ import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
+import net.foxycorndog.thedigginggame.item.Inventory;
 import net.foxycorndog.thedigginggame.map.Map;
 
 /**
@@ -32,6 +33,8 @@ public class Actor
 	private float			jumpHeight, startY;
 	private float			speed;
 	private float			rotation;
+	
+	private	Inventory		inventory;
 	
 	private SpriteSheet		sprites;
 	
@@ -67,6 +70,8 @@ public class Actor
 		this.increaseRot = true;
 		
 		this.color       = new float[] { 1, 1, 1, 1 };
+		
+		inventory        = new Inventory(9 * 3);
 	}
 	
 	/**
@@ -245,6 +250,29 @@ public class Actor
 			
 			startY = y;
 		}
+	}
+	
+	/**
+	 * Get the Inventory instance of the Actor. It holds all of the
+	 * Items that the Actor has acquired.
+	 * 
+	 * @return The Inventory instance of the Actor.
+	 */
+	public Inventory getInventory()
+	{
+		return inventory;
+	}
+	
+	/**
+	 * Set the Inventory instance that the Actor will use to hold all
+	 * of the Items that the Actor will acquire.
+	 * 
+	 * @param inventory The Inventory instance that the Actor will use
+	 * to hold all of the Items that the Actor will acquire.
+	 */
+	public void setInventory(Inventory inventory)
+	{
+		this.inventory = inventory;
 	}
 	
 	/**
@@ -477,5 +505,7 @@ public class Actor
 			
 			onGround    = !tryMove(0, -speed);
 		}
+		
+		inventory.update();
 	}
 }

@@ -31,6 +31,7 @@ import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxylib.util.Intersects;
 import net.foxycorndog.thedigginggame.actor.Player;
 import net.foxycorndog.thedigginggame.components.Cursor;
+import net.foxycorndog.thedigginggame.item.Item;
 import net.foxycorndog.thedigginggame.item.tile.Tile;
 import net.foxycorndog.thedigginggame.map.Chunk;
 import net.foxycorndog.thedigginggame.map.Map;
@@ -47,10 +48,12 @@ import net.foxycorndog.thedigginggame.map.Map;
 public class TheDiggingGame
 {
 	private					boolean			online;
+	private					boolean			tilePlaced;
 	
 	private					int				fps;
 	private					int				editing;
 	private					int				counter;
+	private					int				oldCursorX, oldCursorY;
 	
 	private					float			scale;
 	
@@ -291,7 +294,7 @@ public class TheDiggingGame
 		}
 		GL.popMatrix();
 		
-//		player.getQuickBar().render();
+		player.getQuickBar().render();
 	}
 	
 	/**
@@ -328,28 +331,54 @@ public class TheDiggingGame
 			int cursorX = cursor.getX();
 			int cursorY = cursor.getY();
 			
-			if (map.removeTile(cursorX, cursorY, editing))
+			if ((cursorX != oldCursorX || cursorY != oldCursorY) || tilePlaced)
 			{
-				map.updateChunkAt(cursorX, cursorY);
+				Tile tile = map.getTile(cursorX, cursorY, editing);
+				
+				if (map.removeTile(cursorX, cursorY, editing))
+				{
+					player.getInventory().addItem(tile);
+					
+					// If the action wasnt right mouse button...
+					tilePlaced = false;
+						
+					oldCursorX = cursorX;
+					oldCursorY = cursorY;
+				}
 			}
 		}
 		else if (Mouse.isButtonDown(Mouse.RIGHT_MOUSE_BUTTON))
 		{
-			int  cursorX     = cursor.getX();
-			int  cursorY     = cursor.getY();
+			int cursorX = cursor.getX();
+			int cursorY = cursor.getY();
 			
-			int  tileSize    = Tile.getTileSize();
-			
-			Tile tile        = Tile.getTile("Torch");
-			
-			boolean canPlace = editing != Chunk.MIDDLEGROUND || (!tile.isCollidable() ||
-					!Intersects.rectangles(cursorX * tileSize, cursorY * tileSize, tile.getCols() * tileSize, tile.getRows() * tileSize, player.getX() + 1, player.getY(), player.getWidth() - 2, player.getHeight() - 1));
-			
-			if (canPlace)
+			if ((cursorX != oldCursorX || cursorY != oldCursorY) || !tilePlaced)
 			{
-				if (map.addTile(tile, cursorX, cursorY, editing, false))
+				Item item = player.getInventory().getItem(0);
+				
+				if (item instanceof Tile)
 				{
+					Tile    tile     = (Tile)item;
 					
+					int     ts       = Tile.getTileSize();
+					
+					boolean canPlace = editing != Chunk.MIDDLEGROUND || (!tile.isCollidable() ||
+							!Intersects.rectangles(cursorX * ts, cursorY * ts, tile.getCols() * ts, tile.getRows() * ts,
+									player.getX() + 1, player.getY(), player.getWidth() - 2, player.getHeight() - 3));
+					
+					if (canPlace)
+					{
+						if (map.addTile(tile, cursorX, cursorY, editing, false))
+						{
+							player.getInventory().removeItem(tile);
+							
+							// If the action was right mouse button...
+							tilePlaced = true;
+					
+							oldCursorX = cursorX;
+							oldCursorY = cursorY;
+						}
+					}
 				}
 			}
 		}
@@ -379,28 +408,16 @@ public class TheDiggingGame
 		
 		if (Mouse.getDWheel() != 0)
 		{
-			int dWheel = Mouse.getDWheel() / 112;
+			int   dWheel = Mouse.getDWheel() / 112;
 			
 			float amount = dWheel < 0 ? 0.95f : 1.05f;
 			
 			scale *= (amount);
 		}
 		
-		player.update(delta);
-		
-//		if (player.isMoving())
-//		{
-//			map.updateActorLighting();
-//		}
-		
-//		if (counter % 100 == 0)
-//		{
-//			map.calculateLighting();
-//		}
-		
 		map.generateChunksAround(player);
 		
-		map.update();
+		map.update(delta);
 		
 		counter++;
 		
@@ -412,14 +429,14 @@ public class TheDiggingGame
 	 */
 	private void renderCursor()
 	{
-		int tileSize = Tile.getTileSize();
+		int   tileSize = Tile.getTileSize();
 		
-		float mx = Mouse.getX() / scale;
-		float my = Mouse.getY() / scale;
+		float mx       = Mouse.getX() / scale;
+		float my       = Mouse.getY() / scale;
 		
-		mx = (int)mx / tileSize;
+		mx  = (int)mx / tileSize;
 		mx *= tileSize;
-		my = (int)my / tileSize;
+		my  = (int)my / tileSize;
 		my *= tileSize;
 		
 		mx += map.getX() % tileSize;

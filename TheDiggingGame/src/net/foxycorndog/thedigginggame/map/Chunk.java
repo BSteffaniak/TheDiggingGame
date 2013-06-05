@@ -374,7 +374,7 @@ public class Chunk
 	{
 		Tile oldTile = tiles[layer * LAYER_COUNT + (x + y * CHUNK_SIZE)];
 		
-		if (!replace && oldTile != null)
+		if ((!replace && oldTile != null) || (tile == oldTile))
 		{
 			return false;
 		}
@@ -1010,7 +1010,7 @@ public class Chunk
 				}
 				else
 				{
-					textures = GL.genRectTextures(Tile.getTerrainSprites().getImageOffsets(tile.getX(), tile.getY(), tile.getCols(), tile.getRows()));
+					textures = GL.genRectTextures(Tile.getSprites().getImageOffsets(tile.getX(), tile.getY(), tile.getCols(), tile.getRows()));
 				}
 				
 				chunkBundle.setTextures(offset + (x + y * CHUNK_SIZE) * 3 * 2 * 2, textures);
@@ -1104,7 +1104,7 @@ public class Chunk
 			
 			GL.setColor(0.4f, 0.4f, 0.4f, 1);
 			
-			chunkBundle.render(GL.TRIANGLES, 0, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, Tile.getTerrainSprites());
+			chunkBundle.render(GL.TRIANGLES, 0, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, Tile.getSprites());
 			
 			GL.setColor(1, 1, 1, 1);
 		}
@@ -1118,7 +1118,7 @@ public class Chunk
 	{
 		GL.pushMatrix();
 		{
-			chunkBundle.render(GL.TRIANGLES, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, Tile.getTerrainSprites());
+			chunkBundle.render(GL.TRIANGLES, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, Tile.getSprites());
 		}
 		GL.popMatrix();
 	}
@@ -1132,7 +1132,7 @@ public class Chunk
 		{
 			GL.translate(0, 0, 5);
 			
-			chunkBundle.render(GL.TRIANGLES, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE * 2, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, Tile.getTerrainSprites());
+			chunkBundle.render(GL.TRIANGLES, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE * 2, 3 * 2 * CHUNK_SIZE * CHUNK_SIZE, Tile.getSprites());
 		}
 		GL.popMatrix();
 	}

@@ -1,17 +1,21 @@
 package net.foxycorndog.thedigginggame.actor;
 
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
 import net.foxycorndog.jfoxylib.opengl.texture.Texture;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
+import net.foxycorndog.thedigginggame.item.Inventory;
 import net.foxycorndog.thedigginggame.map.Map;
 
 /**
@@ -21,8 +25,8 @@ import net.foxycorndog.thedigginggame.map.Map;
  * @author	Braden Steffaniak
  * @since	Feb 22, 2013 at 4:23:36 AM
  * @since	v0.1
- * @version Feb 22, 2013 at 4:23:37 AM
- * @version	v0.1
+ * @version Jun 5, 2013 at 1:07:44 AM
+ * @version	v0.3
  */
 public class Player extends Actor
 {
@@ -37,6 +41,10 @@ public class Player extends Actor
 	public Player(Map map)
 	{
 		super(map, 16, 32, 1.25f, 25);
+		
+		Inventory inventory = new Inventory(9 * 4);
+		
+		setInventory(inventory);
 		
 		quickBar = new QuickBar();
 		
@@ -177,6 +185,11 @@ public class Player extends Actor
 		setBundle(bundle);
 	}
 	
+	/**
+	 * Render the Player to the scene.
+	 * 
+	 * @see net.foxycorndog.thedigginggame.actor.Actor#render()
+	 */
 	public void render()
 	{
 		Bundle bundle       = getBundle();
@@ -195,6 +208,15 @@ public class Player extends Actor
 		GL.popMatrix();
 	}
 	
+	/**
+	 * Render all of the appendages of the body to the scene in the
+	 * correct position with the correct rotations.
+	 * 
+	 * @param bundle The Bundle instance to use to render the appendages.
+	 * @param sprites The SpriteSheet to use to render the Textures.
+	 * @param facing The direction that the Player is facing.
+	 * @param rotation The rotation of the walk-cycle.
+	 */
 	private void renderAppendages(Bundle bundle, SpriteSheet sprites, int facing, float rotation)
 	{
 		int offset = facing * 3 * 2 * 6;
@@ -464,6 +486,8 @@ public class Player extends Actor
 	 */
 	public class QuickBar
 	{
+		private	int		width;
+		
 		private Bundle	bundle;
 		
 		private Texture	slots[];
@@ -473,22 +497,26 @@ public class Player extends Actor
 		 */
 		public QuickBar()
 		{
-			bundle = new Bundle(4 * 9 * 2, 2, true, false);
+			bundle = new Bundle(3 * 2 * 9, 2, true, false);
 			
 			BufferedImage slots[] = new BufferedImage[9];
 			this.slots            = new Texture[9];
 			
-			for (int i = 1; i <= slots.length; i++)
+			GL.setTextureScaleMinMethod(GL.NEAREST);
+			GL.setTextureScaleMagMethod(GL.NEAREST);
+			
+			for (int i = 0; i < slots.length; i++)
 			{
 				try
 				{
-					slots[i - 1] = ImageIO.read(new File(TheDiggingGame.getResourcesLocation() + "res/images/quickbar/slot" + i + ".png"));
+					slots[i]      = ImageIO.read(new File(TheDiggingGame.getResourcesLocation() + "res/images/quickbar/slot" + (i + 1) + ".png"));
 					
-					this.slots[i - 1] = new Texture(slots[i - 1]);
+					this.slots[i] = new Texture(slots[0]);
 				}
 				catch (IOException e)
 				{
 //					e.printStackTrace();
+//					System.exit(1);
 				}
 			}
 			
@@ -504,6 +532,8 @@ public class Player extends Actor
 					}
 
 					bundle.addVertices(GL.genRectVerts(0, 0, slot.getWidth(), slot.getHeight()));
+					
+					width += slot.getWidth();
 				}
 			}
 			bundle.endEditingVertices();
@@ -512,7 +542,7 @@ public class Player extends Actor
 			
 			bundle.beginEditingTextures();
 			{
-			for (int i = 0; i < 9; i++)
+				for (int i = 0; i < 9; i++)
 				{
 					if (this.slots[i] != null)
 					{
@@ -530,19 +560,33 @@ public class Player extends Actor
 		 */
 		public void render()
 		{
-			Texture slot = null;
-			
-			for (int i = 0; i < 9; i++)
+			GL.pushMatrix();
 			{
-				if (slots[i] != null)
+				GL.translate(Frame.getWidth() / 2 - width / 2, 0, 12);
+				
+				Texture slot = null;
+				
+				GL.pushMatrix();
 				{
-					slot = slots[i];
+					for (int i = 0; i < 9; i++)
+					{
+						if (slots[i] != null)
+						{
+							slot = slots[i];
+						}
+						
+						bundle.render(GL.TRIANGLES, slot);
+						
+						GL.translate(slot.getWidth(), 0, 0);
+					}
 				}
+				GL.popMatrix();
 				
-				bundle.render(GL.TRIANGLES, slot);
+				GL.translate(0, 0, 1);
 				
-				GL.translate(slot.getWidth(), 0, 0);
+				getInventory().render(0, 9);
 			}
+			GL.popMatrix();
 		}
 	}
 }

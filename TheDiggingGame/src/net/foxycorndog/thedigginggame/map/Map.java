@@ -66,14 +66,34 @@ public class Map
 	 * @version Feb 22, 2013 at 4:23:10 AM
 	 * @version	v0.1
 	 */
-	private abstract class Task
+	private abstract class ChunkTask
 	{
 		/**
 		 * Method to be implemented.
 		 * 
-		 * @param chunk The chunk that is currently being iterated.
+		 * @param chunk The Chunk that is currently being iterated.
 		 */
 		public abstract void run(Chunk chunk);
+	}
+
+	/**
+	 * Class that has a method that is to be implemented. Used
+	 * While iterating through the Actors.
+	 * 
+	 * @author	Braden Steffaniak
+	 * @since	Jun 5, 2013 at 5:09:32 PM
+	 * @since	v0.3
+	 * @version	Jun 5, 2013 at 5:09:32 PM
+	 * @version	v0.3
+	 */
+	private abstract class ActorTask
+	{
+		/**
+		 * Method to be implemented.
+		 * 
+		 * @param actor The Actor that is currently being iterated.
+		 */
+		public abstract void run(Actor actor);
 	}
 	
 	/**
@@ -92,7 +112,7 @@ public class Map
 		 */
 		public void run()
 		{
-			iterateChunks(new Task()
+			iterateChunks(new ChunkTask()
 			{
 				public void run(Chunk chunk)
 				{
@@ -592,7 +612,7 @@ public class Map
 		{
 			GL.translate(x, y, 0);
 			
-			iterateChunks(new Task()
+			iterateChunks(new ChunkTask()
 			{
 				public void run(Chunk chunk)
 				{
@@ -607,7 +627,7 @@ public class Map
 				actor.render();
 			}
 			
-			iterateChunks(new Task()
+			iterateChunks(new ChunkTask()
 			{
 				public void run(Chunk chunk)
 				{
@@ -640,6 +660,41 @@ public class Map
 		y  = bounds.getY();
 		rx = bounds.getWidth();
 		ry = bounds.getHeight();
+		
+		if (isChunkAt(rx, ry))
+		{
+			chunk = chunks.get(rx).get(ry);
+			
+			tile  = chunk.getTile(x, y, layer);
+		}
+		
+		return tile;
+	}
+	
+	/**
+	 * Get the Tile located in the Map relative to the Chunk and location
+	 * given.
+	 * 
+	 * @param chunk The Chunk to search relative to.
+	 * @param x The horizontal location to search relative to.
+	 * @param y The vertical location to search relative to.
+	 * @return The Tile at the location.
+	 */
+	public Tile getTile(int x, int y, int layer)
+	{
+		Tile tile = null;
+		
+		int  rx   = 0;
+		int  ry   = 0;
+		
+		Bounds bounds = trimLocation(x, y, rx, ry);
+		
+		x  = bounds.getX();
+		y  = bounds.getY();
+		rx = bounds.getWidth();
+		ry = bounds.getHeight();
+		
+		Chunk chunk = null;
 		
 		if (isChunkAt(rx, ry))
 		{
@@ -856,7 +911,7 @@ public class Map
 	 * 
 	 * @param task The Task to iterate with.
 	 */
-	private void iterateChunks(Task task)
+	private void iterateChunks(ChunkTask task)
 	{
 		Collection<HashMap<Integer, Chunk>> values = chunks.values();
 		
@@ -878,6 +933,20 @@ public class Map
 	}
 	
 	/**
+	 * Iterate through all of the Actors in the Map and apply the task
+	 * with them.
+	 * 
+	 * @param task The task to run with all of the Actor instances.
+	 */
+	private void iterateActors(ActorTask task)
+	{
+		for (Actor actor : actors)
+		{
+			task.run(actor);
+		}
+	}
+	
+	/**
 	 * Checks whether there is a collision with the Actor and any of the
 	 * Chunks.
 	 * 
@@ -888,7 +957,7 @@ public class Map
 	{
 		collision = false;
 		
-		iterateChunks(new Task()
+		iterateChunks(new ChunkTask()
 		{
 			public void run(Chunk chunk)
 			{
@@ -954,7 +1023,7 @@ public class Map
 		File parentFile = new File(parent);
 		parentFile.mkdirs();
 		
-		iterateChunks(new Task()
+		iterateChunks(new ChunkTask()
 		{
 			public void run(Chunk chunk)
 			{
@@ -1033,7 +1102,7 @@ public class Map
 			}
 		}
 		
-		iterateChunks(new Task()
+		iterateChunks(new ChunkTask()
 		{
 			public void run(Chunk chunk)
 			{
@@ -1046,15 +1115,25 @@ public class Map
 	
 	/**
 	 * Update everything in the Map.
+	 * 
+	 * @param delta The delta used to keep the frames in sync.
 	 */
-	public void update()
+	public void update(final float delta)
 	{
 		if (!chunkQueue.isEmpty())
 		{
 			return;
 		}
 		
-		iterateChunks(new Task()
+		iterateActors(new ActorTask()
+		{
+			public void run(Actor actor)
+			{
+				actor.update(delta);
+			}
+		});
+		
+		iterateChunks(new ChunkTask()
 		{
 			public void run(Chunk chunk)
 			{
