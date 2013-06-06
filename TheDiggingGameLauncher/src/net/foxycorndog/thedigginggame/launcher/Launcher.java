@@ -132,6 +132,8 @@ public class Launcher extends GameStarter
 		
 		timeOutLength = 15;
 		
+		connecting = true;
+		
 		loaderThread = new Thread()
 		{
 			public void run()
@@ -142,15 +144,15 @@ public class Launcher extends GameStarter
 					
 					loadGameFiles();
 					checkLauncherVersion();
-				
-					connecting = false;
+					
 					connectionSuccessful = true;
 				}
 				catch (ConnectionException e)
 				{
-					connecting = false;
 					connectionSuccessful = false;
 				}
+				
+				connecting = false;
 			}
 		};
 		
@@ -280,8 +282,7 @@ public class Launcher extends GameStarter
 	}
 	
 	/**
-	 * Locate the jar file and create an instance of it. Then start the
-	 * game using it.
+	 * Tell the Launcher that it is ready to play the game.
 	 */
 	public void startGame()
 	{
@@ -451,7 +452,7 @@ public class Launcher extends GameStarter
 		{
 			GL.scale(3, 3, 1);
 			
-			if (loaderThread.isAlive() && !playOffline)
+			if (connecting && !playOffline)//loaderThread.isAlive()
 			{
 				font.render("Connecting...", 0, 0, 3, Font.RIGHT, Font.BOTTOM, null);
 			}
@@ -537,7 +538,7 @@ public class Launcher extends GameStarter
 		
 		if (mainMenu != null)
 		{
-			connecting = loaderThread.isAlive() || connecting;
+//			connecting = loaderThread.isAlive() || connecting;
 			
 			if (launcherUpdate)
 			{
@@ -607,7 +608,6 @@ public class Launcher extends GameStarter
 							e.printStackTrace();
 						}
 						
-						System.out.println("done");
 //						System.exit(1);
 						
 						mainMenu.dispose();

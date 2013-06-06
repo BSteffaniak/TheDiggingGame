@@ -30,6 +30,8 @@ import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxylib.util.Intersects;
 import net.foxycorndog.thedigginggame.actor.Player;
+import net.foxycorndog.thedigginggame.chat.ChatBox;
+import net.foxycorndog.thedigginggame.chat.Command;
 import net.foxycorndog.thedigginggame.components.Cursor;
 import net.foxycorndog.thedigginggame.item.Item;
 import net.foxycorndog.thedigginggame.item.tile.Tile;
@@ -54,18 +56,21 @@ public class TheDiggingGame
 	private					int				editing;
 	private					int				counter;
 	private					int				oldCursorX, oldCursorY;
+	private					int				oldEditing;
 	
 	private					float			scale;
 	
 	private					Cursor			cursor;
 	
-	private					Player			player;
+	private					ChatBox			chatBox;
 	
-	private					Font			font;
+	private					Player			player;
 	
 	private					Map				map;
 	
 	private	static			String			resourcesLocation;
+	
+	private	static			Font			font;
 	
 	public	static	final	String			VERSION	= "0.1";
 	
@@ -214,22 +219,58 @@ public class TheDiggingGame
 				
 				if (map != null)
 				{
-					if (code == Keyboard.KEY_L)
+					if (chatBox.isOpen())
 					{
-						map.save("world");
-					}
-					if (code == Keyboard.KEY_Q)
-					{
-						editing--;
-						
-						if (editing < 0)
+						if (code == Keyboard.KEY_ENTER)
 						{
-							editing = Chunk.FOREGROUND;
+							String text = chatBox.getText();
+							
+							if (text.startsWith("/"))
+							{
+								String response = Command.run(text.substring(1), player);
+								
+								if (response != null)
+								{
+									System.err.println(response);
+								}
+							}
+							
+							chatBox.close();
+						}
+						else if (code == Keyboard.KEY_ESCAPE)
+						{
+							chatBox.close();
 						}
 					}
-					else if (code == Keyboard.KEY_E)
+					else
 					{
-						editing = (editing + 1) % 3;
+						if (code == Keyboard.KEY_L)
+						{
+							map.save("world");
+						}
+						if (code == Keyboard.KEY_Q)
+						{
+							editing--;
+							
+							if (editing < 0)
+							{
+								editing = Chunk.FOREGROUND;
+							}
+						}
+						else if (code == Keyboard.KEY_E)
+						{
+							editing = (editing + 1) % 3;
+						}
+						else if (code == Keyboard.KEY_SLASH)
+						{
+							chatBox.open();
+						}
+						else if (code >= 2 && code <= 10)
+						{
+							int index = code - 2;
+							
+							player.getQuickBar().setSelectedIndex(index);
+						}
 					}
 				}
 			}
@@ -257,8 +298,6 @@ public class TheDiggingGame
 		player.setLocation(16 * 6, 16 * 13);
 		player.setFocused(true);
 		
-//		System.out.println("asdf" );
-//		System.exit(0);
 		map.addActor(player);
 		
 		cursor = new Cursor(Tile.getTileSize());
@@ -266,6 +305,8 @@ public class TheDiggingGame
 		player.center();
 		
 		editing = Chunk.MIDDLEGROUND;
+		
+		chatBox = new ChatBox();
 		
 		GL.setClearColor(0.2f, 0.5f, 0.8f, 1);
 	}
@@ -295,6 +336,8 @@ public class TheDiggingGame
 		GL.popMatrix();
 		
 		player.getQuickBar().render();
+		
+		chatBox.render();
 	}
 	
 	/**
@@ -331,7 +374,7 @@ public class TheDiggingGame
 			int cursorX = cursor.getX();
 			int cursorY = cursor.getY();
 			
-			if ((cursorX != oldCursorX || cursorY != oldCursorY) || tilePlaced)
+			if ((cursorX != oldCursorX || cursorY != oldCursorY) || tilePlaced || editing != oldEditing)
 			{
 				Tile tile = map.getTile(cursorX, cursorY, editing);
 				
@@ -344,6 +387,8 @@ public class TheDiggingGame
 						
 					oldCursorX = cursorX;
 					oldCursorY = cursorY;
+					
+					oldEditing = editing;
 				}
 			}
 		}
@@ -352,9 +397,9 @@ public class TheDiggingGame
 			int cursorX = cursor.getX();
 			int cursorY = cursor.getY();
 			
-			if ((cursorX != oldCursorX || cursorY != oldCursorY) || !tilePlaced)
+			if ((cursorX != oldCursorX || cursorY != oldCursorY) || !tilePlaced || editing != oldEditing)
 			{
-				Item item = player.getInventory().getItem(0);
+				Item item = player.getQuickBar().getSelectedItem();
 				
 				if (item instanceof Tile)
 				{
@@ -377,29 +422,38 @@ public class TheDiggingGame
 					
 							oldCursorX = cursorX;
 							oldCursorY = cursorY;
+							
+							oldEditing = editing;
 						}
 					}
 				}
 			}
 		}
 		
-		if (Keyboard.isKeyDown(Keyboard.KEY_A))
+		if (!chatBox.isOpen())
 		{
-			player.moveLeft(delta);
-		}
-		else if (Keyboard.isKeyDown(Keyboard.KEY_D))
-		{
-			player.moveRight(delta);
-		}
-
-		if (Keyboard.isKeyDown(Keyboard.KEY_SPACE) || Keyboard.isKeyDown(Keyboard.KEY_W))
-		{
-			player.jump();
-		}
-		
-		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT_SHIFT))
-		{
-			player.setSprinting(true);
+			if (Keyboard.isKeyDown(Keyboard.KEY_A))
+			{
+				player.moveLeft(delta);
+			}
+			else if (Keyboard.isKeyDown(Keyboard.KEY_D))
+			{
+				player.moveRight(delta);
+			}
+	
+			if (Keyboard.isKeyDown(Keyboard.KEY_SPACE) || Keyboard.isKeyDown(Keyboard.KEY_W))
+			{
+				player.jump();
+			}
+			
+			if (Keyboard.isKeyDown(Keyboard.KEY_LEFT_SHIFT))
+			{
+				player.setSprinting(true);
+			}
+			else
+			{
+				player.setSprinting(false);
+			}
 		}
 		else
 		{
@@ -410,9 +464,20 @@ public class TheDiggingGame
 		{
 			int   dWheel = Mouse.getDWheel() / 112;
 			
-			float amount = dWheel < 0 ? 0.95f : 1.05f;
-			
-			scale *= (amount);
+			if (Keyboard.isKeyDown(Keyboard.KEY_CONTROL))
+			{
+				float amount = dWheel < 0 ? 0.95f : 1.05f;
+				
+				scale *= (amount);
+			}
+			else
+			{
+				int sign = dWheel < 0 ? -1 : 1;
+				
+				int index = player.getQuickBar().getSelectedIndex();
+				
+				player.getQuickBar().setSelectedIndex(index - sign);
+			}
 		}
 		
 		map.generateChunksAround(player);
@@ -459,6 +524,9 @@ public class TheDiggingGame
 			my -= tileSize;
 		}
 		
+		GL.setTextureScaleMinMethod(GL.LINEAR);
+		GL.setTextureScaleMagMethod(GL.NEAREST);
+		
 		cursor.render(mx, my, 11);
 		
 		float x = mx / tileSize;
@@ -474,11 +542,21 @@ public class TheDiggingGame
 	}
 	
 	/**
+	 * Get the default Font instance that is used for the game.
+	 * 
+	 * @return The default Font instance that is used for the game.
+	 */
+	public static Font getFont()
+	{
+		return font;
+	}
+	
+	/**
 	 * Get the current version of the client that is being ran.
 	 * 
 	 * @return The current version in the String format.
 	 */
-	public String getVersion()
+	public static String getVersion()
 	{
 		return VERSION;
 	}

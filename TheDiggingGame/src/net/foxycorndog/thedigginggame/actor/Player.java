@@ -16,6 +16,8 @@ import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
 import net.foxycorndog.jfoxylib.opengl.texture.Texture;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.item.Inventory;
+import net.foxycorndog.thedigginggame.item.Item;
+import net.foxycorndog.thedigginggame.item.tile.Tile;
 import net.foxycorndog.thedigginggame.map.Map;
 
 /**
@@ -486,21 +488,27 @@ public class Player extends Actor
 	 */
 	public class QuickBar
 	{
+		private	int		slotCount;
 		private	int		width;
+		private	int		selectedIndex;
 		
 		private Bundle	bundle;
 		
-		private Texture	slots[];
+		private Texture	slots[], selectedSlots[];
 		
 		/**
 		 * Create the bar that shows what items are on the hot-keys.
 		 */
 		public QuickBar()
 		{
-			bundle = new Bundle(3 * 2 * 9, 2, true, false);
+			this.slotCount = 9;
 			
-			BufferedImage slots[] = new BufferedImage[9];
-			this.slots            = new Texture[9];
+			bundle = new Bundle(3 * 2 * slotCount, 2, true, false);
+			
+			BufferedImage slots[]         = new BufferedImage[9];
+			this.slots                    = new Texture[9];
+			BufferedImage selectedSlots[] = new BufferedImage[9];
+			this.selectedSlots            = new Texture[9];
 			
 			GL.setTextureScaleMinMethod(GL.NEAREST);
 			GL.setTextureScaleMagMethod(GL.NEAREST);
@@ -509,9 +517,11 @@ public class Player extends Actor
 			{
 				try
 				{
-					slots[i]      = ImageIO.read(new File(TheDiggingGame.getResourcesLocation() + "res/images/quickbar/slot" + (i + 1) + ".png"));
+					slots[i]              = ImageIO.read(new File(TheDiggingGame.getResourcesLocation() + "res/images/quickbar/slot" + (i + 1) + ".png"));
+					this.slots[i]         = new Texture(slots[i]);
 					
-					this.slots[i] = new Texture(slots[0]);
+					selectedSlots[i]      = ImageIO.read(new File(TheDiggingGame.getResourcesLocation() + "res/images/quickbar/selectedSlot" + (i + 1) + ".png"));
+					this.selectedSlots[i] = new Texture(selectedSlots[i]);
 				}
 				catch (IOException e)
 				{
@@ -524,7 +534,7 @@ public class Player extends Actor
 			
 			bundle.beginEditingVertices();
 			{
-				for (int i = 0; i < 9; i++)
+				for (int i = 0; i < slotCount; i++)
 				{
 					if (this.slots[i] != null)
 					{
@@ -542,7 +552,7 @@ public class Player extends Actor
 			
 			bundle.beginEditingTextures();
 			{
-				for (int i = 0; i < 9; i++)
+				for (int i = 0; i < slotCount; i++)
 				{
 					if (this.slots[i] != null)
 					{
@@ -556,6 +566,47 @@ public class Player extends Actor
 		}
 		
 		/**
+		 * Get the Item instance that is currently selected in the
+		 * QuickBar.
+		 * 
+		 * @return The Item instance that is currently selected in the
+		 * 		QuickBar.
+		 */
+		public Item getSelectedItem()
+		{
+			return getInventory().getItem(selectedIndex);
+		}
+		
+		/**
+		 * Get the index of the QuickBar that is currently selected.
+		 * 
+		 * @return The index of the QuickBar that is currently selected.
+		 */
+		public int getSelectedIndex()
+		{
+			return selectedIndex;
+		}
+		
+		/**
+		 * Set the index in which to be selected.
+		 * 
+		 * @param index The index in which to be selected.
+		 */
+		public void setSelectedIndex(int index)
+		{
+			if (index >= slotCount)
+			{
+				index = 0;
+			}
+			else if (index < 0)
+			{
+				index = slotCount - 1;
+			}
+			
+			this.selectedIndex = index;
+		}
+		
+		/**
 		 * Render the QuickBar to the bottom center of the screen.
 		 */
 		public void render()
@@ -564,27 +615,41 @@ public class Player extends Actor
 			{
 				GL.translate(Frame.getWidth() / 2 - width / 2, 0, 12);
 				
-				Texture slot = null;
+				Texture slot         = null;
+				Texture selectedSlot = null;
 				
 				GL.pushMatrix();
 				{
-					for (int i = 0; i < 9; i++)
+					for (int i = 0; i < slotCount; i++)
 					{
 						if (slots[i] != null)
 						{
 							slot = slots[i];
 						}
+						if (selectedSlots[i] != null)
+						{
+							selectedSlot = selectedSlots[i];
+						}
 						
-						bundle.render(GL.TRIANGLES, slot);
+						if (selectedIndex == i)
+						{
+							bundle.render(GL.TRIANGLES, selectedSlot);
+						}
+						else
+						{
+							bundle.render(GL.TRIANGLES, slot);
+						}
 						
 						GL.translate(slot.getWidth(), 0, 0);
 					}
 				}
 				GL.popMatrix();
 				
-				GL.translate(0, 0, 1);
+				int ts = Tile.getTileSize();
 				
-				getInventory().render(0, 9);
+				GL.translate(ts / 2, ts / 2 - 2, 1);
+				
+				getInventory().render(0, slotCount);
 			}
 			GL.popMatrix();
 		}

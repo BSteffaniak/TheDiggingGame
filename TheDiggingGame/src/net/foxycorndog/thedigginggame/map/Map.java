@@ -608,6 +608,9 @@ public class Map
 	 */
 	public void render()
 	{
+		GL.setTextureScaleMinMethod(GL.NEAREST);
+		GL.setTextureScaleMagMethod(GL.NEAREST);
+		
 		GL.pushMatrix();
 		{
 			GL.translate(x, y, 0);

@@ -19,6 +19,7 @@ import net.foxycorndog.thedigginggame.item.tile.Tile;
 public class Inventory
 {
 	private	int				capacity;
+	private	int				width, height;
 	
 	private	Bundle			bundle;
 	
@@ -36,8 +37,8 @@ public class Inventory
 	{
 		this.capacity = capacity;
 		
-		int width     = 9;
-		int height    = capacity / width;
+		width         = 9;
+		height        = capacity / width;
 		
 		slots = new Slot[capacity];
 		
@@ -48,21 +49,26 @@ public class Inventory
 		
 		bundle = new Bundle(capacity * 3 * 2, 2, true, false);
 		
+		loadVertices(3, 16);
+		
+		slotQueue = new Queue<Integer>();
+	}
+	
+	private void loadVertices(float scale, int margin)
+	{
 		bundle.beginEditingVertices();
 		{
-			int rectSize = Tile.getTileSize();
+			float rectSize = Tile.getTileSize() * scale;
 			
 			for (int i = 0; i < capacity; i++)
 			{
 				int x = i % width;
 				int y = i / width;
 				
-				bundle.addVertices(GL.genRectVerts(x * (rectSize), y * (rectSize), rectSize, rectSize));
+				bundle.addVertices(GL.genRectVerts(x * (rectSize + margin), y * (rectSize), rectSize, rectSize));
 			}
 		}
 		bundle.endEditingVertices();
-		
-		slotQueue = new Queue<Integer>();
 	}
 	
 	/**
@@ -94,12 +100,13 @@ public class Inventory
 	 * times if there is space available for it.
 	 * 
 	 * @param item The Item to add to the Inventory.
+	 * @param quantity The amount of the Item to add to the Inventory.
 	 * @return The number of instances of the Item that were added into
 	 * 		the Inventory.
 	 */
-	public int addItem(Item item, int num)
+	public int addItem(Item item, int quantity)
 	{
-		int numLeft = num;
+		int numLeft = quantity;
 		
 		for (int id = 0; id < slots.length; id++)
 		{
@@ -121,7 +128,7 @@ public class Inventory
 					{
 						slot.addInstance(numLeft);
 						
-						return num;
+						return quantity;
 					}
 				}
 			}
@@ -151,13 +158,13 @@ public class Inventory
 					{
 						slot.addInstance(numLeft);
 						
-						return num;
+						return quantity;
 					}
 				}
 			}
 		}
 		
-		return num - numLeft;
+		return quantity - numLeft;
 	}
 	
 	/**
@@ -178,12 +185,14 @@ public class Inventory
 	 * them available.
 	 * 
 	 * @param item The Item to remove from the Inventory.
+	 * @param quantity The amount of the Item to remove from the
+	 * 		Inventory.
 	 * @return The number of instances of the Item that were removed from
 	 * 		the Inventory.
 	 */
-	public int removeItem(Item item, int num)
+	public int removeItem(Item item, int quantity)
 	{
-		int numLeft = num;
+		int numLeft = quantity;
 
 		for (int id = 0; id < slots.length; id++)
 		{
@@ -197,7 +206,7 @@ public class Inventory
 				{
 					slot.removeInstance(numLeft);
 					
-					return num;
+					return quantity;
 				}
 				else
 				{
@@ -206,7 +215,7 @@ public class Inventory
 			}
 		}
 		
-		return num - numLeft;
+		return quantity - numLeft;
 	}
 	
 	/**
