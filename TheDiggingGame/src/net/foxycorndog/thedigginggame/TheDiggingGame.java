@@ -231,7 +231,14 @@ public class TheDiggingGame
 								
 								if (response != null)
 								{
-									System.err.println(response);
+									chatBox.postMessage(response, player);
+								}
+							}
+							else
+							{
+								if (text.length() > 0)
+								{
+									chatBox.postMessage(text, player);
 								}
 							}
 							
