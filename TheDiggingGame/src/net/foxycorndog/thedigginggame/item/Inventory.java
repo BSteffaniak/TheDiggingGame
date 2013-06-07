@@ -3,6 +3,8 @@ package net.foxycorndog.thedigginggame.item;
 import java.util.ArrayList;
 
 import net.foxycorndog.jfoxylib.components.Button;
+import net.foxycorndog.jfoxylib.events.ButtonEvent;
+import net.foxycorndog.jfoxylib.events.ButtonListener;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxyutil.Queue;
@@ -21,6 +23,8 @@ public class Inventory
 {
 	private	int				capacity;
 	private	int				width, height;
+	
+	private	ButtonListener	listener;
 	
 	private	Bundle			bundle;
 	
@@ -49,6 +53,37 @@ public class Inventory
 		{
 			slots[i] = new Slot();
 		}
+		
+		listener = new ButtonListener()
+		{
+			public void buttonUnHovered(ButtonEvent event)
+			{
+				
+			}
+			
+			public void buttonReleased(ButtonEvent event)
+			{
+				Button source = event.getSource();
+				
+				for (int id = 0; id < buttons.length; id++)
+				{
+					if (source == buttons[id])
+					{
+						System.out.println(id);
+					}
+				}
+			}
+			
+			public void buttonPressed(ButtonEvent event)
+			{
+				
+			}
+			
+			public void buttonHovered(ButtonEvent event)
+			{
+				
+			}
+		};
 		
 		bundle  = new Bundle(capacity * 3 * 2, 2, true, false);
 		
@@ -80,6 +115,9 @@ public class Inventory
 				bundle.addVertices(GL.genRectVerts(x * (rectSize + horizontalMargin), y * (rectSize + verticalMargin), rectSize, rectSize));
 				
 				buttons[i] = new Button(null, bundle, 3 * 2 * 2 * i);
+				buttons[i].addButtonListener(listener);
+				buttons[i].setSize(Math.round(rectSize), Math.round(rectSize), false);
+				buttons[i].setLocation(Math.round(x * (rectSize + horizontalMargin)), Math.round(y * (rectSize + verticalMargin)));
 			}
 		}
 		bundle.endEditingVertices();
@@ -329,6 +367,11 @@ public class Inventory
 	 */
 	public void render(int startId, int amount)
 	{
+		for (int id = 0; id < buttons.length; id++)
+		{
+			buttons[id].update();
+		}
+		
 		bundle.render(GL.TRIANGLES, startId * 3 * 2, amount * 3 * 2, Item.getSprites());
 	}
 	
@@ -380,6 +423,17 @@ public class Inventory
 			}
 		}
 		bundle.endEditingTextures();
+	}
+	
+	/**
+	 * Dispose of the Inventory, including the Buttons.
+	 */
+	public void dispose()
+	{
+		for (Button button : buttons)
+		{
+			button.dispose();
+		}
 	}
 	
 	/**

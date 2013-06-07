@@ -62,11 +62,6 @@ public class ChatBox
 		
 		int height  = Math.round(font.getGlyphHeight() * scale[1] * (1 / 0.8f));
 		
-		historyBackground = new Image(null);
-		historyBackground.setImage(white);
-		historyBackground.setSize(Frame.getWidth() - 100, Frame.getHeight() - 200);
-		historyBackground.setLocation(10, 100);
-		
 		textFieldImage = new Image(null);
 		textFieldImage.setImage(white);
 		textFieldImage.setSize(Frame.getWidth() - 100, height);
@@ -75,8 +70,13 @@ public class ChatBox
 		textField.setFont(font);
 		textField.setBackgroundImage(textFieldImage);
 		textField.setFontColor(new net.foxycorndog.jfoxylib.Color(255, 255, 255, 255));
-		textField.setLocation(10, 100 - height - 2);
+		textField.setLocation(10, 10);
 		textField.setCaretChar('_');
+		
+		historyBackground = new Image(null);
+		historyBackground.setImage(white);
+		historyBackground.setSize(Frame.getWidth() - 100, Frame.getHeight() - 200);
+		historyBackground.setLocation(10, textField.getY() + textField.getHeight() + 50);
 		
 		close();
 		
@@ -157,10 +157,12 @@ public class ChatBox
 
 			public void keyReleased(KeyEvent event)
 			{
+				
 			}
 
 			public void keyTyped(KeyEvent event)
 			{
+				
 			}
 			
 			private void setTextToHistory(int id)
@@ -291,6 +293,8 @@ public class ChatBox
 	 * it doesnt render anything but recent messages that have been said.
 	 * However, if the user is typing something, it will show the
 	 * TextField with the current text.
+	 * 
+	 * @param scale The scale in which to render the ChatBox in.
 	 */
 	public void render(float scale)
 	{
@@ -305,7 +309,7 @@ public class ChatBox
 			
 			GL.translate(0, 0, 15);
 			
-			GL.setColor(0, 0, 0, 0.25f);
+			GL.setColor(0, 0, 0, 0.75f);
 			
 			textField.render();
 //			System.out.println(textField.getText());
@@ -321,12 +325,18 @@ public class ChatBox
 			
 			height *= scale;
 			
-			for (Message message : history)
+			GL.translate(historyBackground.getX(), historyBackground.getY(), 0);
+			
+			GL.beginClipping(0, 0, historyBackground.getWidth(), historyBackground.getHeight());
 			{
-				font.render(message.toString(), historyBackground.getX(), historyBackground.getY() + yOffset, 0, scale, null);
-				
-				yOffset += height;
+				for (Message message : history)
+				{
+					font.render(message.toString(), 2, yOffset + 2, 0, scale, null);
+					
+					yOffset += height;
+				}
 			}
+			GL.endClipping();
 			
 			GL.setColor(color);
 		}

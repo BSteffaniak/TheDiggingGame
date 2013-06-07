@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Buffer;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
@@ -135,27 +136,6 @@ public class Chunk
 			this.y     = y;
 			
 			this.layer = layer;
-		}
-	}
-	
-	/**
-	 * Class that holds the information for a new Tile01 that will be
-	 * added to the tiles when the update() method is called.
-	 * 
-	 * @author	Braden Steffaniak
-	 * @since	Feb 22, 2013 at 7:18:20 PM
-	 * @since	v0.1
-	 * @version Feb 22, 2013 at 7:18:20 PM
-	 * @version	v0.1
-	 */
-	private class LightSource
-	{
-		private int x, y;
-		private int strength;
-		
-		public LightSource()
-		{
-			
 		}
 	}
 	
@@ -457,6 +437,27 @@ public class Chunk
 		return tiles[index];
 	}
 	
+	/**
+	 * Get whether or not the Chunk is within the viewing range of the
+	 * Frame.
+	 * 
+	 * @param scale The scale that the Chunks are rendered in.
+	 * @return Whether or not the Chunk is within the viewing range of the
+	 * 		Frame.
+	 */
+	public boolean isInView(float scale)
+	{
+		return Intersects.rectangles((map.getX() + getX()) * scale, (map.getY() + getY()) * scale, getWidth() * scale, getHeight() * scale, 0, 0, Frame.getWidth(), Frame.getHeight());
+	}
+	
+	/**
+	 * Emit light around a circular area at the specified location
+	 * with the specified intensity.
+	 * 
+	 * @param x The horizontal location of the place to emit.
+	 * @param y The vertical location of the place to emit.
+	 * @param intensity How many Tiles the light emits across.
+	 */
 	private void emitLight(int x, int y, float intensity)
 	{
 		float light     = Math.abs(intensity);

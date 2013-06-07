@@ -304,6 +304,8 @@ public class Actor
 	 */
 	public void setInventory(Inventory inventory)
 	{
+		this.inventory.dispose();
+		
 		this.inventory = inventory;
 	}
 	

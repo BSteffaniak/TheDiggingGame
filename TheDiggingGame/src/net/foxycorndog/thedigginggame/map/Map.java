@@ -164,7 +164,7 @@ public class Map
 //						}
 //					}
 //					
-//					iterateChunks(new Task()
+//					iterateVisibleChunks(new Task()
 //					{
 //						public void run(Chunk chunk)
 //						{
@@ -544,7 +544,7 @@ public class Map
 		{
 			GL.translate(x, y, 0);
 			
-			iterateChunks(new ChunkTask()
+			iterateVisibleChunks(new ChunkTask()
 			{
 				public void run(Chunk chunk)
 				{
@@ -559,7 +559,7 @@ public class Map
 				actor.render();
 			}
 			
-			iterateChunks(new ChunkTask()
+			iterateVisibleChunks(new ChunkTask()
 			{
 				public void run(Chunk chunk)
 				{
@@ -919,6 +919,36 @@ public class Map
 	}
 	
 	/**
+	 * Method that uses the iterates through each of the Chunks and
+	 * calls the Task.run(Chunk) method for each Chunk.
+	 * 
+	 * @param task The Task to iterate with.
+	 */
+	private void iterateVisibleChunks(ChunkTask task)
+	{
+		Collection<HashMap<Integer, Chunk>> values = chunks.values();
+		
+		Iterator iterator = values.iterator();
+		
+		while (iterator.hasNext())
+		{
+			Object next = iterator.next();
+			
+			HashMap<Integer, Chunk> map = (HashMap<Integer, Chunk>)next;
+			
+			Chunk chunks[] = map.values().toArray(new Chunk[0]);
+			
+			for (Chunk chunk : chunks)
+			{
+				if (chunk.isInView(game.getScale()))
+				{
+					task.run(chunk);
+				}
+			}
+		}
+	}
+	
+	/**
 	 * Iterate through all of the Actors in the Map and apply the task
 	 * with them.
 	 * 
@@ -943,7 +973,7 @@ public class Map
 	{
 		collision = false;
 		
-		iterateChunks(new ChunkTask()
+		iterateVisibleChunks(new ChunkTask()
 		{
 			public void run(Chunk chunk)
 			{
@@ -1119,7 +1149,7 @@ public class Map
 			}
 		});
 		
-		iterateChunks(new ChunkTask()
+		iterateVisibleChunks(new ChunkTask()
 		{
 			public void run(Chunk chunk)
 			{
