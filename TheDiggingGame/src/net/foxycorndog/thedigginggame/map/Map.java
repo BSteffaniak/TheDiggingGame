@@ -44,11 +44,7 @@ public class Map
 	
 	private TheDiggingGame	game;
 	
-	private Shader			lighting;
-	
 	private Thread			lightingThread, generatorThread;
-	
-	private LightingClass	lightingInstance;
 	
 	private HashMap<Integer, HashMap<Integer, Chunk>> chunks;
 	
@@ -97,42 +93,10 @@ public class Map
 	}
 	
 	/**
-	 * Class that calculates the lighting in the Chunks.
-	 * 
-	 * @author	Braden Steffaniak
-	 * @since	Mar 16, 2013 at 11:02:55 PM
-	 * @since	v0.1
-	 * @version Mar 16, 2013 at 11:02:55 PM
-	 * @version	v0.1
-	 */
-	private class LightingClass implements Runnable
-	{
-		/**
-		 * Method called when the Thread is started.
-		 */
-		public void run()
-		{
-			iterateChunks(new ChunkTask()
-			{
-				public void run(Chunk chunk)
-				{
-//					chunk.calculateLighting(false);
-					//TODO: I did this too.
-				}
-			});
-		}
-	}
-	
-	/**
 	 * Construct a Map.
 	 */
 	public Map(TheDiggingGame game)
 	{
-		lighting = new Shader();
-		lighting.loadFile(TheDiggingGame.getResourcesLocation() + "res/shaders/", new String[] { "lighting.vs" }, new String[] { "lighting.frag" });
-		
-		lightingInstance = new LightingClass();
-		
 		chunks     = new HashMap<Integer, HashMap<Integer, Chunk>>();
 		
 		actors     = new ArrayList<Actor>();
@@ -261,41 +225,6 @@ public class Map
 			}
 		}
 	}
-	
-	/**
-	 * Updates all of the lighting for the Chunks.
-	 */
-	public void calculateLighting()
-	{
-//		new Thread()
-//		{
-//			public void run()
-//			{
-//				synchronized (lightingThread)
-//				{
-//					lightingThread.notify();
-//				}
-//			}
-//		}.start();
-		
-		lightingThread = new Thread(lightingInstance);
-		
-		lightingThread.setPriority(Thread.MIN_PRIORITY);
-		lightingThread.start();
-		
-//		updateActorLighting();
-	}
-	
-//	public synchronized void updateLighting()
-//	{
-//		iterateChunks(new Task()
-//		{
-//			public void run(Chunk chunk)
-//			{
-//				chunk.updateLighting();
-//			}
-//		});
-//	}
 	
 	/**
 	 * Generate a Chunk at the specified location with the specified
@@ -639,6 +568,60 @@ public class Map
 			});
 		}
 		GL.popMatrix();
+	}
+	
+	/**
+	 * Get all of the Tiles in the Map that are in touching proximity
+	 * of the specified Actor.
+	 * 
+	 * @param actor The Actor to check for the Tiles around.
+	 * @return An array of Tiles that are within touching proximity
+	 * 		of the specified Actor.
+	 */
+	public Tile[] getAdjacentTiles(Actor actor, int layer)
+	{
+		ArrayList<Tile> tiles = new ArrayList<Tile>();
+		
+		Tile   tile        = null;
+		
+		int    ts          = Tile.getTileSize();
+		
+		float  actorX      = actor.getX() + 1;
+		float  actorY      = actor.getY();
+		int    actorWidth  = actor.getWidth() - 2;
+		int    actorHeight = actor.getHeight() - 3;
+		
+		int    xt          = (int)Math.round(actorX / ts);
+		int    yt          = (int)Math.floor(actorY / ts);
+		float  wt          = actorWidth  / (float)ts;
+		float  ht          = actorHeight / (float)ts;
+		
+//		if (actorX < 0)
+//		{
+//			xt--;
+//		}
+		if (actorY < 0)
+		{
+			yt++;
+		}
+		
+		int signX = xt < 0 ? -1 : 1;
+		int signY = yt < 0 ? -1 : 1;
+		
+		for (int y = 0; y < ht; y++)
+		{
+			for (int x = 0; x < wt; x++)
+			{
+				tile = getTile(xt + x * signX, yt + y * signY, layer);
+				
+				if (tile != null)
+				{
+					tiles.add(tile);
+				}
+			}
+		}
+		
+		return tiles.toArray(new Tile[0]);
 	}
 	
 	/**

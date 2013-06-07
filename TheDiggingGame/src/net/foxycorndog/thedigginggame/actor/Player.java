@@ -649,7 +649,7 @@ public class Player extends Actor
 				
 				GL.translate(ts / 2, ts / 2 - 2, 1);
 				
-				getInventory().render(0, slotCount);
+				getInventory().render();//0, slotCount);
 			}
 			GL.popMatrix();
 		}

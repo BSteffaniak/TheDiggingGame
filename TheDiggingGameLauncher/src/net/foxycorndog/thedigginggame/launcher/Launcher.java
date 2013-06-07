@@ -486,15 +486,15 @@ public class Launcher extends GameStarter
 			}
 			catch (IllegalAccessException e)
 			{
-				e.printStackTrace();
+				handleError(e);
 			}
 			catch (IllegalArgumentException e)
 			{
-				e.printStackTrace();
+				handleError(e);
 			}
 			catch (InvocationTargetException e)
 			{
-				e.printStackTrace();
+				handleError(e);
 			}
 		}
 	}
@@ -516,15 +516,15 @@ public class Launcher extends GameStarter
 			}
 			catch (IllegalAccessException e)
 			{
-				e.printStackTrace();
+				handleError(e);
 			}
 			catch (IllegalArgumentException e)
 			{
-				e.printStackTrace();
+				handleError(e);
 			}
 			catch (InvocationTargetException e)
 			{
-				e.printStackTrace();
+				handleError(e);
 			}
 		}
 	}
@@ -597,15 +597,15 @@ public class Launcher extends GameStarter
 						}
 						catch (IllegalAccessException e)
 						{
-							e.printStackTrace();
+							handleError(e);
 						}
 						catch (IllegalArgumentException e)
 						{
-							e.printStackTrace();
+							handleError(e);
 						}
 						catch (InvocationTargetException e)
 						{
-							e.printStackTrace();
+							handleError(e);
 						}
 						
 //						System.exit(1);
@@ -637,15 +637,15 @@ public class Launcher extends GameStarter
 			}
 			catch (IllegalAccessException e)
 			{
-				e.printStackTrace();
+				handleError(e);
 			}
 			catch (IllegalArgumentException e)
 			{
-				e.printStackTrace();
+				handleError(e);
 			}
 			catch (InvocationTargetException e)
 			{
-				e.printStackTrace();
+				handleError(e);
 			}
 			
 //			try
@@ -665,6 +665,13 @@ public class Launcher extends GameStarter
 //				e.printStackTrace();
 //			}
 		}
+	}
+	
+	private void handleError(Exception e)
+	{
+		e.getCause().printStackTrace();
+		
+		System.exit(1);
 	}
 	
 	/**

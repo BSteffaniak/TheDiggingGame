@@ -2,6 +2,7 @@ package net.foxycorndog.thedigginggame.item;
 
 import java.util.ArrayList;
 
+import net.foxycorndog.jfoxylib.components.Button;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxyutil.Queue;
@@ -22,6 +23,8 @@ public class Inventory
 	private	int				width, height;
 	
 	private	Bundle			bundle;
+	
+	private	Button			buttons[];
 	
 	private Slot			slots[];
 	
@@ -47,14 +50,23 @@ public class Inventory
 			slots[i] = new Slot();
 		}
 		
-		bundle = new Bundle(capacity * 3 * 2, 2, true, false);
+		bundle  = new Bundle(capacity * 3 * 2, 2, true, false);
 		
-		loadVertices(3, 16);
+		buttons = new Button[capacity];
+		
+		loadVertices(3, 16, 16);
 		
 		slotQueue = new Queue<Integer>();
 	}
 	
-	private void loadVertices(float scale, int margin)
+	/**
+	 * Load the vertices for each of the Inventory slots 
+	 * 
+	 * @param scale
+	 * @param horizontalMargin
+	 * @param verticalMargin
+	 */
+	private void loadVertices(float scale, int horizontalMargin, int verticalMargin)
 	{
 		bundle.beginEditingVertices();
 		{
@@ -65,7 +77,9 @@ public class Inventory
 				int x = i % width;
 				int y = i / width;
 				
-				bundle.addVertices(GL.genRectVerts(x * (rectSize + margin), y * (rectSize), rectSize, rectSize));
+				bundle.addVertices(GL.genRectVerts(x * (rectSize + horizontalMargin), y * (rectSize + verticalMargin), rectSize, rectSize));
+				
+				buttons[i] = new Button(null, bundle, 3 * 2 * 2 * i);
 			}
 		}
 		bundle.endEditingVertices();
@@ -328,28 +342,41 @@ public class Inventory
 		{
 			return;
 		}
+		
 		bundle.beginEditingTextures();
 		{
 			while (!slotQueue.isEmpty())
 			{
-				int id = slotQueue.dequeue();
+				int    id         = slotQueue.dequeue();
 				
-				float textures[] = null;
+				Button button     = buttons[id];
+				
+				float  textures[] = null;
 				
 				if (slots[id].instances <= 0)
 				{
 					textures = new float[3 * 2 * 2];
+					
+					button.removeImage(false);
 				}
 				else
 				{
 					Item  item      = slots[id].item;
 					
-					float offsets[] = Item.getSprites().getImageOffsets(item.getX(), item.getY(), item.getCols(), item.getRows());
+					button.setImage(Item.getSprites(), false);
 					
+					float offsets[] = Item.getSprites().getImageOffsets(item.getX(), item.getY(), item.getCols(), item.getRows());
 					textures        = GL.genRectTextures(offsets);
+					
+					button.setSpriteX(item.getX());
+					button.setSpriteY(item.getY());
+					button.setSpriteCols(item.getCols());
+					button.setSpriteRows(item.getRows());
+				
+					button.updateTexture(false);
 				}
 				
-				bundle.setTextures(id * 3 * 2 * 2, textures);
+//				bundle.setTextures(id * 3 * 2 * 2, textures);
 			}
 		}
 		bundle.endEditingTextures();

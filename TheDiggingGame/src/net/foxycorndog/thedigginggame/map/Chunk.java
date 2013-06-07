@@ -32,6 +32,7 @@ import net.foxycorndog.thedigginggame.item.tile.Tile;
 public class Chunk
 {
 	private					boolean				lightingUpdated, tilesUpdated;
+	private					boolean				generated;
 	
 	private					int					relativeX, relativeY;
 	
@@ -301,10 +302,23 @@ public class Chunk
 	}
 	
 	/**
+	 * Get whether the Chunk has been and is finished generating or not.
+	 * 
+	 * @return Whether the Chunk has been and is finished generating or
+	 * 		not.
+	 */
+	public boolean isGenerated()
+	{
+		return generated;
+	}
+	
+	/**
 	 * Method that generates the terrain of the chunk.
 	 */
 	public void generate()
 	{
+		generated = false;
+		
 		if (relativeY <= 0)
 		{
 			for (int y = 0; y < CHUNK_SIZE - 21; y++)
@@ -346,6 +360,8 @@ public class Chunk
 			
 			hook.start();
 		}
+		
+		generated = true;
 	}
 	
 	/**
@@ -460,11 +476,9 @@ public class Chunk
 				y2          = (int)(y + y3 - (light / 2));
 				
 				double dist = distance(x, y, x2, y2);
+				float  dif  = -(float)(1 - ((dist) / (light / 2)));
 				
-				float  dif  = -(float)(((light / 2) - dist) / (light / 2));
-				
-				dif = dif > 0 ? 0 : dif;
-				
+				dif  = dif > 0 ? 0 : dif;
 				dif *= sign;
 				
 				addRGBA(0, 0, 0, dif, x2, y2, LIGHT);

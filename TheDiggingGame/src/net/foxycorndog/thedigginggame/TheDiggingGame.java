@@ -203,14 +203,16 @@ public class TheDiggingGame
 //		
 //		GL.setClearColor(0.2f, 0.5f, 0.8f, 1);
 		
-		Keyboard.addKeyListener(new KeyListener()
+		KeyListener listener = new KeyListener()
 		{
 			public void keyTyped(KeyEvent event)
 			{
+				
 			}
 			
 			public void keyReleased(KeyEvent event)
 			{
+				
 			}
 			
 			public void keyPressed(KeyEvent event)
@@ -219,37 +221,7 @@ public class TheDiggingGame
 				
 				if (map != null)
 				{
-					if (chatBox.isOpen())
-					{
-						if (code == Keyboard.KEY_ENTER)
-						{
-							String text = chatBox.getText();
-							
-							if (text.startsWith("/"))
-							{
-								String response = Command.run(text.substring(1), player);
-								
-								if (response != null)
-								{
-									chatBox.postMessage(response, player);
-								}
-							}
-							else
-							{
-								if (text.length() > 0)
-								{
-									chatBox.postMessage(text, player);
-								}
-							}
-							
-							chatBox.close();
-						}
-						else if (code == Keyboard.KEY_ESCAPE)
-						{
-							chatBox.close();
-						}
-					}
-					else
+					if (!chatBox.isOpen())
 					{
 						if (code == Keyboard.KEY_L)
 						{
@@ -286,9 +258,11 @@ public class TheDiggingGame
 			{
 				
 			}
-		});
+		};
 		
 		startGame();
+		
+		Keyboard.addKeyListener(listener);
 	}
 	
 	/**
@@ -313,7 +287,7 @@ public class TheDiggingGame
 		
 		editing = Chunk.MIDDLEGROUND;
 		
-		chatBox = new ChatBox();
+		chatBox = new ChatBox(player);
 		
 		GL.setClearColor(0.2f, 0.5f, 0.8f, 1);
 	}
@@ -344,7 +318,7 @@ public class TheDiggingGame
 		
 		player.getQuickBar().render();
 		
-		chatBox.render();
+		chatBox.render(3);
 	}
 	
 	/**
@@ -450,7 +424,12 @@ public class TheDiggingGame
 	
 			if (Keyboard.isKeyDown(Keyboard.KEY_SPACE) || Keyboard.isKeyDown(Keyboard.KEY_W))
 			{
+				player.setClimbing(true);
 				player.jump();
+			}
+			else
+			{
+				player.setClimbing(false);
 			}
 			
 			if (Keyboard.isKeyDown(Keyboard.KEY_LEFT_SHIFT))

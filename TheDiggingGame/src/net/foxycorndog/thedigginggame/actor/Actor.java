@@ -5,6 +5,8 @@ import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
 import net.foxycorndog.thedigginggame.item.Inventory;
+import net.foxycorndog.thedigginggame.item.tile.Tile;
+import net.foxycorndog.thedigginggame.map.Chunk;
 import net.foxycorndog.thedigginggame.map.Map;
 
 /**
@@ -19,32 +21,33 @@ import net.foxycorndog.thedigginggame.map.Map;
  */
 public class Actor
 {
-	private boolean			moving, movingHorizontally, movingVertically;
-	private boolean			onGround, jumping;
-	private boolean			increaseRot;
-	private boolean			sprinting;
-	private boolean			focused;
+	private	boolean			moving, movingHorizontally, movingVertically;
+	private	boolean			onGround, jumping;
+	private	boolean			climbing;
+	private	boolean			increaseRot;
+	private	boolean			sprinting;
+	private	boolean			focused;
 	
-	private int				width, height;
-	private int				facing, oldFacing;
+	private	int				width, height;
+	private	int				facing, oldFacing;
 	
-	private float			x, y;
-	private float			mx, my;
-	private float			jumpHeight, startY;
-	private float			speed;
-	private float			rotation;
+	private	float			x, y;
+	private	float			mx, my;
+	private	float			jumpHeight, startY;
+	private	float			speed;
+	private	float			rotation;
 	
 	private	Inventory		inventory;
 	
-	private SpriteSheet		sprites;
+	private	SpriteSheet		sprites;
 	
-	private Bundle			bundle;
+	private	Bundle			bundle;
 	
-	private Map				map;
+	private	Map				map;
 	
-	private float			color[];
+	private	float			color[];
 	
-	public static final int	LEFT = 0, FORWARD = 1, RIGHT = 2, BACKWARD = 3;
+	public	static final int	LEFT = 0, FORWARD = 1, RIGHT = 2, BACKWARD = 3;
 	
 	/**
 	 * Creates an actor with the specified characteristics.
@@ -239,6 +242,35 @@ public class Actor
 	}
 	
 	/**
+	 * Try to climb.
+	 * 
+	 * @param delta The delta to use when calculating how far to
+	 * 		move up.
+	 * @return Whether the Actor successfully climbed or not.
+	 */
+	private boolean tryClimb(float delta)
+	{
+		Tile tiles[] = map.getAdjacentTiles(this, Chunk.MIDDLEGROUND);
+		
+		float max = 0;
+		
+		for (Tile tile : tiles)
+		{
+			if (tile.getClimbSpeed() > max)
+			{
+				max = tile.getClimbSpeed();
+			}
+		}
+		
+		if (max > 0)
+		{
+			return tryMove(0, max * delta);
+		}
+		
+		return false;
+	}
+	
+	/**
 	 * Start jumping if the Actor is on the ground and not already
 	 * jumping.
 	 */
@@ -276,6 +308,8 @@ public class Actor
 	}
 	
 	/**
+	 * Get the width of the sprite of the Actor.
+	 * 
 	 * @return The width of the sprite of the Actor.
 	 */
 	public int getWidth()
@@ -284,6 +318,8 @@ public class Actor
 	}
 
 	/**
+	 * Get the height of the sprite of the Actor.
+	 * 
 	 * @return The height of the sprite of the Actor.
 	 */
 	public int getHeight()
@@ -292,6 +328,8 @@ public class Actor
 	}
 	
 	/**
+	 * Get whether or not the Actor is on the ground.
+	 * 
 	 * @return Whether or not the Actor is on the ground.
 	 */
 	public boolean isOnGround()
@@ -300,6 +338,8 @@ public class Actor
 	}
 	
 	/**
+	 * Get the Bundle that is used to render the Actor.
+	 * 
 	 * @return The Bundle that is used to render the Actor.
 	 */
 	public Bundle getBundle()
@@ -318,6 +358,8 @@ public class Actor
 	}
 	
 	/**
+	 * Get the SpriteSheet that is used to render the Actor.
+	 * 
 	 * @return The SpriteSheet that is used to render the Actor.
 	 */
 	public SpriteSheet getSprites()
@@ -336,6 +378,8 @@ public class Actor
 	}
 	
 	/**
+	 * Get the direction that the Actor is currently facing.
+	 * 
 	 * @return The direction that the Actor is currently facing.
 	 */
 	public int getFacing()
@@ -344,6 +388,8 @@ public class Actor
 	}
 	
 	/**
+	 * Get the rotation of the Actor.
+	 * 
 	 * @return The rotation of the Actor.
 	 */
 	public float getRotation()
@@ -352,6 +398,8 @@ public class Actor
 	}
 	
 	/**
+	 * Get whether the Actor is currently moving in any direction.
+	 * 
 	 * @return Whether the Actor is currently moving in any direction.
 	 */
 	public boolean isMoving()
@@ -360,6 +408,8 @@ public class Actor
 	}
 	
 	/**
+	 * Get whether the Actor is currently moving horizontally.
+	 * 
 	 * @return Whether the Actor is currently moving horizontally.
 	 */
 	public boolean isMovingHorizontally()
@@ -368,6 +418,8 @@ public class Actor
 	}
 
 	/**
+	 * Get whether the Actor is currently moving vertically.
+	 * 
 	 * @return Whether the Actor is currently moving vertically.
 	 */
 	public boolean isMovingVertically()
@@ -376,6 +428,8 @@ public class Actor
 	}
 	
 	/**
+	 * Get whether the Actor is currently sprinting.
+	 * 
 	 * @return Whether the Actor is currently sprinting.
 	 */
 	public boolean isSprinting()
@@ -386,7 +440,7 @@ public class Actor
 	/**
 	 * Set whether the Actor is sprinting or not.
 	 * 
-	 * @param sprinting Whether the Actor is sprinting.
+	 * @param sprinting Whether or not the Actor will sprinting.
 	 */
 	public void setSprinting(boolean sprinting)
 	{
@@ -406,13 +460,43 @@ public class Actor
 	}
 	
 	/**
-	 * @return The rgba float color array of this Actor.
+	 * Get whether the Actor is currently attempting to climb.
+	 * 
+	 * @return Whether the Actor is currently attempting to climb.
+	 */
+	public boolean isClimbing()
+	{
+		return climbing;
+	}
+	
+	/**
+	 * Set whether the Actor will attempt to climb or not.
+	 * 
+	 * @param climbing Whether or not the Actor will attempt to climb.
+	 */
+	public void setClimbing(boolean climbing)
+	{
+		this.climbing = climbing;
+	}
+	
+	/**
+	 * Get the (r, g, b, a) float color array of this Actor.
+	 * 
+	 * @return The (r, g, b, a) float color array of this Actor.
 	 */
 	public float[] getColor()
 	{
 		return color;
 	}
 	
+	/**
+	 * Set the (r, g, b, a) float color array of this Actor. (0 - 1)
+	 * 
+	 * @param r The red component.
+	 * @param g The green component.
+	 * @param b The blue component.
+	 * @param a The alpha component.
+	 */
 	public void setColor(float r, float g, float b, float a)
 	{
 		color[0] = r;
@@ -480,6 +564,8 @@ public class Actor
 		
 		oldFacing = facing;
 		
+		boolean idle = false;
+		
 		if (jumping)
 		{
 			float speed = 3f * delta;
@@ -498,8 +584,22 @@ public class Actor
 				jumping = false;
 			}
 		}
+		else
+		{
+			if (climbing)
+			{
+				if (!tryClimb(delta))
+				{
+					idle = true;
+				}
+			}
+			else
+			{
+				idle = true;
+			}
+		}
 		
-		if (!jumping)
+		if (idle)
 		{
 			float speed = 3f * delta;
 			

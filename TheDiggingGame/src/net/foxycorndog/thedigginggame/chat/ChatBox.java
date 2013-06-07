@@ -8,7 +8,13 @@ import java.util.ArrayList;
 import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.components.Image;
 import net.foxycorndog.jfoxylib.components.TextField;
+import net.foxycorndog.jfoxylib.events.KeyEvent;
+import net.foxycorndog.jfoxylib.events.KeyListener;
+import net.foxycorndog.jfoxylib.events.MouseEvent;
+import net.foxycorndog.jfoxylib.events.MouseListener;
 import net.foxycorndog.jfoxylib.font.Font;
+import net.foxycorndog.jfoxylib.input.Keyboard;
+import net.foxycorndog.jfoxylib.input.Mouse;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxylib.opengl.texture.Texture;
@@ -35,7 +41,7 @@ public class ChatBox
 	
 	private	ArrayList<Message>	history;
 	
-	public ChatBox()
+	public ChatBox(final Player player)
 	{
 		history = new ArrayList<Message>();
 		
@@ -70,8 +76,158 @@ public class ChatBox
 		textField.setBackgroundImage(textFieldImage);
 		textField.setFontColor(new net.foxycorndog.jfoxylib.Color(255, 255, 255, 255));
 		textField.setLocation(10, 100 - height - 2);
+		textField.setCaretChar('_');
 		
 		close();
+		
+		Keyboard.addKeyListener(new KeyListener()
+		{
+			private	int		historyId = -1;
+			
+			private	String	currentText;
+
+			public void keyDown(KeyEvent event)
+			{
+			}
+
+			public void keyPressed(KeyEvent event)
+			{
+				int code = event.getKeyCode();
+				
+				if (code == Keyboard.KEY_ENTER)
+				{
+					String text = getText();
+					
+					if (text.startsWith("/"))
+					{
+						String response = Command.run(text.substring(1), player);
+						
+						if (response != null)
+						{
+							postMessage(response, player);
+						}
+					}
+					else
+					{
+						if (text.length() > 0)
+						{
+							postMessage(text, player);
+						}
+					}
+					
+					close();
+					
+					historyId = -1;
+				}
+				else if (code == Keyboard.KEY_ESCAPE)
+				{
+					close();
+				}
+				else if (code == Keyboard.KEY_UP)
+				{
+					saveCurrentText();
+					
+					historyId++;
+					
+					if (historyId > history.size() - 1)
+					{
+						historyId = history.size() - 1;
+					}
+					
+					setTextToHistory(historyId);
+				}
+				else if (code == Keyboard.KEY_DOWN)
+				{
+					saveCurrentText();
+					
+					historyId--;
+					
+					if (historyId < 0)
+					{
+						historyId = -1;
+						
+						setText(currentText);
+					}
+					else
+					{
+						setTextToHistory(historyId);
+					}
+				}
+			}
+
+			public void keyReleased(KeyEvent event)
+			{
+			}
+
+			public void keyTyped(KeyEvent event)
+			{
+			}
+			
+			private void setTextToHistory(int id)
+			{
+				if (historyId < 0 || historyId >= history.size())
+				{
+					return;
+				}
+				
+				setText(history.get(id).message);
+			}
+			
+			private void saveCurrentText()
+			{
+				if (historyId == -1)
+				{
+					currentText = textField.getText();
+				}
+			}
+		});
+		
+		Mouse.addMouseListener(new MouseListener()
+		{
+			/**
+			 * Make sure the TextField keeps focus even if the user clicks
+			 * away while it is open.
+			 * 
+			 * @see net.foxycorndog.jfoxylib.events.MouseListener#mouseUp(net.foxycorndog.jfoxylib.events.MouseEvent)
+			 */
+			public void mouseUp(MouseEvent event)
+			{
+				if (open)
+				{
+					textField.setFocused(true);
+				}
+			}
+			
+			public void mouseReleased(MouseEvent event)
+			{
+				
+			}
+			
+			public void mousePressed(MouseEvent event)
+			{
+				
+			}
+			
+			public void mouseMoved(MouseEvent event)
+			{
+				
+			}
+			
+			public void mouseExited(MouseEvent event)
+			{
+				
+			}
+			
+			public void mouseEntered(MouseEvent event)
+			{
+				
+			}
+			
+			public void mouseDown(MouseEvent event)
+			{
+				
+			}
+		});
 	}
 	
 	/**
@@ -136,7 +292,7 @@ public class ChatBox
 	 * However, if the user is typing something, it will show the
 	 * TextField with the current text.
 	 */
-	public void render()
+	public void render(float scale)
 	{
 		if (!open)
 		{
@@ -158,14 +314,16 @@ public class ChatBox
 			
 			GL.setColor(1, 1, 1, 1);
 			
-			Font font     = TheDiggingGame.getFont();
+			Font  font    = TheDiggingGame.getFont();
 			
 			float height  = font.getGlyphHeight() + 1;
 			float yOffset = 0;
 			
+			height *= scale;
+			
 			for (Message message : history)
 			{
-				font.render(message.toString(), historyBackground.getX(), historyBackground.getY() + yOffset, 0, null);
+				font.render(message.toString(), historyBackground.getX(), historyBackground.getY() + yOffset, 0, scale, null);
 				
 				yOffset += height;
 			}
@@ -175,6 +333,12 @@ public class ChatBox
 		GL.popMatrix();
 	}
 	
+	/**
+	 * Post a message with the specified sender.
+	 * 
+	 * @param message The message to send.
+	 * @param sender The sender that wrote the message.
+	 */
 	public void postMessage(String message, Player sender)
 	{
 		Message m = new Message(message, sender);

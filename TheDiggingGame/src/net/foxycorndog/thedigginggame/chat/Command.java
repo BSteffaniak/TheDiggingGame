@@ -62,9 +62,14 @@ public class Command
 				
 				Tile tile = Tile.getTile(itemName);
 				
-				actor.getInventory().addItem(tile, quantity);
+				if (tile == null)
+				{
+					return "No such Tile: '" + itemName + "'";
+				}
 				
-				return null;
+				actor.getInventory().addItem(tile, quantity);
+
+				return "Giving player " + quantity + " " + tile;
 			}
 			
 			index = 0;
@@ -100,9 +105,14 @@ public class Command
 				
 				Tile tile = Tile.getTile(itemName);
 				
+				if (tile == null)
+				{
+					return "No such Tile: '" + itemName + "'";
+				}
+				
 				actor.getInventory().removeItem(tile, quantity);
 				
-				return null;
+				return "Removing " + quantity + " " + tile + " from player";
 			}
 			
 			response = "Unknown command.";
