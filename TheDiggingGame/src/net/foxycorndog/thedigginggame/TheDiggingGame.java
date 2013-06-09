@@ -19,6 +19,8 @@ import net.foxycorndog.jfoxylib.components.Component;
 import net.foxycorndog.jfoxylib.components.Image;
 import net.foxycorndog.jfoxylib.events.ButtonEvent;
 import net.foxycorndog.jfoxylib.events.ButtonListener;
+import net.foxycorndog.jfoxylib.events.FrameEvent;
+import net.foxycorndog.jfoxylib.events.FrameListener;
 import net.foxycorndog.jfoxylib.events.KeyEvent;
 import net.foxycorndog.jfoxylib.events.KeyListener;
 import net.foxycorndog.jfoxylib.events.MouseEvent;
@@ -51,6 +53,7 @@ public class TheDiggingGame
 {
 	private					boolean			online;
 	private					boolean			tilePlaced;
+	private					boolean			showInventory;
 	
 	private					int				fps;
 	private					int				editing;
@@ -58,7 +61,7 @@ public class TheDiggingGame
 	private					int				oldCursorX, oldCursorY;
 	private					int				oldEditing;
 	
-	private					float			scale;
+	private					float			mapScale, guiScale;
 	
 	private					Cursor			cursor;
 	
@@ -164,9 +167,10 @@ public class TheDiggingGame
 	{
 		this.online = online;
 		
-		this.resourcesLocation = resourcesLocation;
+		TheDiggingGame.resourcesLocation = resourcesLocation;
 		
-		scale = 2;
+		mapScale = 2;
+		guiScale = 4;
 		
 //		map = new Map(this);
 //		
@@ -181,7 +185,7 @@ public class TheDiggingGame
 		
 		try
 		{
-			font = new Font("res/images/fonts/font.png", 26, 4,
+			font = new Font(resourcesLocation + "res/images/fonts/font.png", 26, 4,
 					new char[]
 					{
 						'A', 'B', 'C', 'D', 'E', 'F',  'G', 'H', 'I', 'J', 'K', 'L',  'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -240,6 +244,10 @@ public class TheDiggingGame
 						{
 							editing = (editing + 1) % 3;
 						}
+						else if (code == Keyboard.KEY_TAB)
+						{
+							showInventory = !showInventory;
+						}
 						else if (code == Keyboard.KEY_SLASH)
 						{
 							chatBox.open();
@@ -259,6 +267,14 @@ public class TheDiggingGame
 				
 			}
 		};
+		
+		Frame.addFrameListener(new FrameListener()
+		{
+			public void frameResized(FrameEvent e)
+			{
+				chatBox.updateSizes();
+			}
+		});
 		
 		startGame();
 		
@@ -293,11 +309,19 @@ public class TheDiggingGame
 	}
 	
 	/**
-	 * @return The scale in which the game is rendered.
+	 * @return The scale in which the Map is rendered.
 	 */
-	public float getScale()
+	public float getMapScale()
 	{
-		return scale;
+		return mapScale;
+	}
+	
+	/**
+	 * @return The scale in which the GUI is rendered.
+	 */
+	public float getGUIScale()
+	{
+		return guiScale;
 	}
 	
 	/**
@@ -309,16 +333,28 @@ public class TheDiggingGame
 		
 		GL.pushMatrix();
 		{
-			GL.scale(scale, scale, 1);
+			GL.scale(mapScale, mapScale, 1);
 			map.render();
 			
 			renderCursor();
 		}
 		GL.popMatrix();
 		
-		player.getQuickBar().render();
+//		chatBox.render(1);
 		
-		chatBox.render(3);
+		if (showInventory)
+		{
+			float x = Frame.getWidth() / 2 - player.getInventory().getBackgroundImage().getWidth() / 2;
+			float y = Frame.getHeight() / 2 - player.getInventory().getBackgroundImage().getHeight() / 2;
+			
+			GL.translate(x, y, 19);
+			
+			player.getInventory().render(true);
+		}
+		else
+		{
+			player.getQuickBar().render();
+		}
 	}
 	
 	/**
@@ -454,7 +490,7 @@ public class TheDiggingGame
 			{
 				float amount = dWheel < 0 ? 0.95f : 1.05f;
 				
-				scale *= (amount);
+				mapScale *= (amount);
 			}
 			else
 			{
@@ -482,8 +518,8 @@ public class TheDiggingGame
 	{
 		int   tileSize = Tile.getTileSize();
 		
-		float mx       = Mouse.getX() / scale;
-		float my       = Mouse.getY() / scale;
+		float mx       = Mouse.getX() / mapScale;
+		float my       = Mouse.getY() / mapScale;
 		
 		mx  = (int)mx / tileSize;
 		mx *= tileSize;
@@ -493,19 +529,19 @@ public class TheDiggingGame
 		mx += map.getX() % tileSize;
 		my += map.getY() % tileSize;
 		
-		if (Mouse.getX() > mx * scale + tileSize)
+		if (Mouse.getX() > mx * mapScale + tileSize)
 		{
 			mx += tileSize;
 		}
-		if (Mouse.getY() > my * scale + tileSize)
+		if (Mouse.getY() > my * mapScale + tileSize)
 		{
 			my += tileSize;
 		}
-		if (Mouse.getX() < mx * scale)
+		if (Mouse.getX() < mx * mapScale)
 		{
 			mx -= tileSize;
 		}
-		if (Mouse.getY() < my * scale)
+		if (Mouse.getY() < my * mapScale)
 		{
 			my -= tileSize;
 		}

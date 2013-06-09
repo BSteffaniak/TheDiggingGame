@@ -74,7 +74,20 @@ public class Actor
 		
 		this.color       = new float[] { 1, 1, 1, 1 };
 		
-		inventory        = new Inventory(9 * 3);
+		float guiScale   = map.getGame().getGUIScale();
+		
+		inventory        = new Inventory(9, 3, Inventory.CHEST_INVENTORY_IMAGE);
+		inventory.loadVertices(guiScale, 16 / guiScale, 16 / guiScale, 16 / guiScale, new float[3]);
+	}
+	
+	/**
+	 * Get the Map instance that the Actor belongs to.
+	 * 
+	 * @return The Map instance that the Actor belongs to.
+	 */
+	public Map getMap()
+	{
+		return map;
 	}
 	
 	/**
@@ -109,7 +122,7 @@ public class Actor
 	 */
 	public void center()
 	{
-		float scale = map.getGame().getScale();
+		float scale = map.getGame().getMapScale();
 		
 		map.setLocation(-x + ((Frame.getWidth() / 2) / scale) - width / 2, -y + ((Frame.getHeight() / 2) / scale) - height / 2);
 	}

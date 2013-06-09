@@ -1,13 +1,17 @@
 package net.foxycorndog.thedigginggame.item;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import net.foxycorndog.jfoxylib.components.Button;
+import net.foxycorndog.jfoxylib.components.Image;
 import net.foxycorndog.jfoxylib.events.ButtonEvent;
 import net.foxycorndog.jfoxylib.events.ButtonListener;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
+import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
 import net.foxycorndog.jfoxyutil.Queue;
+import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.item.tile.Tile;
 
 /**
@@ -24,6 +28,8 @@ public class Inventory
 	private	int				capacity;
 	private	int				width, height;
 	
+	private	Image			backgroundImage;
+	
 	private	ButtonListener	listener;
 	
 	private	Bundle			bundle;
@@ -34,20 +40,48 @@ public class Inventory
 	
 	private	Queue<Integer>	slotQueue;
 	
+	public	static	final	Image	PLAYER_INVENTORY_IMAGE, CHEST_INVENTORY_IMAGE;
+	
+	static
+	{
+		PLAYER_INVENTORY_IMAGE = new Image(null);
+		CHEST_INVENTORY_IMAGE  = new Image(null);
+			
+		try
+		{
+			SpriteSheet playerInventorySprites = new SpriteSheet(TheDiggingGame.getResourcesLocation() + "res/images/gui/PlayerInventory.png", 256, 256);
+			
+			PLAYER_INVENTORY_IMAGE.setSpriteX(6);
+			PLAYER_INVENTORY_IMAGE.setSpriteY(32);
+			PLAYER_INVENTORY_IMAGE.setSpriteCols(185);
+			PLAYER_INVENTORY_IMAGE.setSpriteRows(129);
+			PLAYER_INVENTORY_IMAGE.setImage(playerInventorySprites);
+			
+//			CHEST_INVENTORY_IMAGE.setImage(TheDiggingGame.getResourcesLocation() + "res/images/gui/ChestInventory.png");
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
 	/**
 	 * Create an Inventory instance.
 	 * 
 	 * @param capacity The number of slots for holding stacks of Items
 	 * 		that the Inventory has.
 	 */
-	public Inventory(int capacity)
+	public Inventory(int width, int height, Image backgroundImage)
 	{
-		this.capacity = capacity;
+		this.capacity        = width * height;
 		
-		width         = 9;
-		height        = capacity / width;
+		this.width           = width;
+		this.height          = height;
 		
-		slots = new Slot[capacity];
+		this.backgroundImage = backgroundImage;
+		
+		this.slots           = new Slot[capacity];
 		
 		for (int i = 0; i < capacity; i++)
 		{
@@ -69,7 +103,9 @@ public class Inventory
 				{
 					if (source == buttons[id])
 					{
-						System.out.println(id);
+						
+						
+						break;
 					}
 				}
 			}
@@ -89,38 +125,77 @@ public class Inventory
 		
 		buttons = new Button[capacity];
 		
-		loadVertices(3, 16, 16);
-		
 		slotQueue = new Queue<Integer>();
 	}
 	
 	/**
-	 * Load the vertices for each of the Inventory slots 
+	 * Load the vertices for each of the Inventory slots.
 	 * 
-	 * @param scale
-	 * @param horizontalMargin
-	 * @param verticalMargin
+	 * @param scale The scale in which to size the rectangles.
+	 * @param horizontalMargin The margin that separates each of the
+	 * 		rectangles horizontally.
+	 * @param verticalMargin The margin that separates each of the
+	 * 		rectangles vertically.
+	 * @param colOffset The vertical offset of the vertices.
+	 * @param rowOffsets Array that contains values that correspond to
+	 * 		how much to move the row up
 	 */
-	private void loadVertices(float scale, int horizontalMargin, int verticalMargin)
+	public void loadVertices(float scale, float horizontalMargin, float verticalMargin, float colOffset, float rowOffsets[])
 	{
+		float tileScale = scale / 2;
+		
+		horizontalMargin *= scale;
+		verticalMargin   *= scale;
+		colOffset        *= scale;
+		
+		for (int i = 0; i < rowOffsets.length; i++)
+		{
+			rowOffsets[i] *= scale;
+		}
+		
 		bundle.beginEditingVertices();
 		{
-			float rectSize = Tile.getTileSize() * scale;
+			float rectSize = Tile.getTileSize() * tileScale;
+			
+			float yOffset = 0;
 			
 			for (int i = 0; i < capacity; i++)
 			{
 				int x = i % width;
 				int y = i / width;
 				
-				bundle.addVertices(GL.genRectVerts(x * (rectSize + horizontalMargin), y * (rectSize + verticalMargin), rectSize, rectSize));
+				if (x == 0)
+				{
+					yOffset += rowOffsets[y];
+				}
+				
+				float xLoc = (x * (rectSize + horizontalMargin) + colOffset);
+				float yLoc = (y * (rectSize + verticalMargin) + yOffset);
+				
+//				xLoc      *= scale;
+//				yLoc      *= scale;
+				
+				bundle.addVertices(GL.genRectVerts(xLoc, yLoc, rectSize, rectSize));
 				
 				buttons[i] = new Button(null, bundle, 3 * 2 * 2 * i);
 				buttons[i].addButtonListener(listener);
 				buttons[i].setSize(Math.round(rectSize), Math.round(rectSize), false);
-				buttons[i].setLocation(Math.round(x * (rectSize + horizontalMargin)), Math.round(y * (rectSize + verticalMargin)));
+				buttons[i].setLocation(Math.round(xLoc), Math.round(yLoc), false);
 			}
 		}
 		bundle.endEditingVertices();
+		
+		backgroundImage.setSize(Math.round(backgroundImage.getWidth() * scale), Math.round(backgroundImage.getHeight() * scale));
+	}
+	
+	/**
+	 * Get the Image that appears behind the Inventory.
+	 * 
+	 * @return The Image that appears behind the Inventory.
+	 */
+	public Image getBackgroundImage()
+	{
+		return backgroundImage;
 	}
 	
 	/**
@@ -355,7 +430,18 @@ public class Inventory
 	 */
 	public void render()
 	{
-		render(0, capacity);
+		render(false);
+	}
+	
+	/**
+	 * Render all of the Slots to the screen.
+	 * 
+	 * @param renderImage Whether or not to render the Background Image
+	 * 		of the Inventory too.
+	 */
+	public void render(boolean renderImage)
+	{
+		render(0, capacity, renderImage);
 	}
 	
 	/**
@@ -367,9 +453,38 @@ public class Inventory
 	 */
 	public void render(int startId, int amount)
 	{
+		render(startId, amount, false);
+	}
+	
+	/**
+	 * Render the specified amount of Slots to the Display starting
+	 * with the specified start ID.
+	 * 
+	 * @param startId The Slot ID to start the rendering with.
+	 * @param amount The amount of slots to render.
+	 * @param renderImage Whether or not to render the Background Image
+	 * 		of the Inventory too.
+	 */
+	public void render(int startId, int amount, boolean renderImage)
+	{
+		if (renderImage)
+		{
+			backgroundImage.render();
+		}
+		
 		for (int id = 0; id < buttons.length; id++)
 		{
+//			for (int i = 0; i < 100; i++)
 			buttons[id].update();
+			
+			if (id >= startId && id < startId + amount)
+			{
+				buttons[id].setEnabled(true);
+			}
+			else
+			{
+				buttons[id].setEnabled(false);
+			}
 		}
 		
 		bundle.render(GL.TRIANGLES, startId * 3 * 2, amount * 3 * 2, Item.getSprites());
@@ -400,7 +515,7 @@ public class Inventory
 				{
 					textures = new float[3 * 2 * 2];
 					
-					button.removeImage(false);
+					button.disposeImage(false);
 				}
 				else
 				{

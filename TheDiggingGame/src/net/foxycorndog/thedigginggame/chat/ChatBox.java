@@ -34,7 +34,7 @@ public class ChatBox
 {
 	private	boolean				open;
 	
-	private	Image				historyBackground;
+	private	Image				historyBackground, messageBackground;
 	private	Image				textFieldImage;
 	
 	private	TextField			textField;
@@ -64,19 +64,22 @@ public class ChatBox
 		
 		textFieldImage = new Image(null);
 		textFieldImage.setImage(white);
-		textFieldImage.setSize(Frame.getWidth() - 100, height);
+		textFieldImage.setSize(Frame.getWidth() - 20, height);
 		
 		textField = new TextField(null);
 		textField.setFont(font);
-		textField.setBackgroundImage(textFieldImage);
 		textField.setFontColor(new net.foxycorndog.jfoxylib.Color(255, 255, 255, 255));
 		textField.setLocation(10, 10);
 		textField.setCaretChar('_');
 		
 		historyBackground = new Image(null);
 		historyBackground.setImage(white);
-		historyBackground.setSize(Frame.getWidth() - 100, Frame.getHeight() - 200);
 		historyBackground.setLocation(10, textField.getY() + textField.getHeight() + 50);
+		
+		messageBackground = new Image(null);
+		messageBackground.setImage(white);
+		
+		updateSizes();
 		
 		close();
 		
@@ -288,6 +291,17 @@ public class ChatBox
 		open = false;
 	}
 	
+	public void updateSizes()
+	{
+		textFieldImage.setSize(Frame.getWidth() - 20, textFieldImage.getHeight());
+		
+		textField.setBackgroundImage(textFieldImage);
+		
+		historyBackground.setSize(Frame.getWidth() - 20, Frame.getHeight() - 200);
+		
+		messageBackground.setSize(Frame.getWidth() - 20, 10);
+	}
+	
 	/**
 	 * Render the ChatBox at its current state. If the ChatBox is closed,
 	 * it doesnt render anything but recent messages that have been said.
@@ -298,46 +312,88 @@ public class ChatBox
 	 */
 	public void render(float scale)
 	{
-		if (!open)
-		{
-			return;
-		}
+		Font  font    = TheDiggingGame.getFont();
+		
+		float height  = font.getGlyphHeight() + 1;
+		float yOffset = 0;
+		
+		height *= scale;
 		
 		GL.pushMatrix();
 		{
 			float color[] = GL.getColor();
 			
 			GL.translate(0, 0, 15);
-			
-			GL.setColor(0, 0, 0, 0.75f);
-			
-			textField.render();
-//			System.out.println(textField.getText());
-			
-			historyBackground.render();
-			
-			GL.setColor(1, 1, 1, 1);
-			
-			Font  font    = TheDiggingGame.getFont();
-			
-			float height  = font.getGlyphHeight() + 1;
-			float yOffset = 0;
-			
-			height *= scale;
-			
-			GL.translate(historyBackground.getX(), historyBackground.getY(), 0);
-			
-			GL.beginClipping(0, 0, historyBackground.getWidth(), historyBackground.getHeight());
+				
+			if (!open)
 			{
-				for (Message message : history)
+				messageBackground.setSize(messageBackground.getWidth(), Math.round(height));
+				
+				long  currentTime = System.currentTimeMillis();
+				
+				float alpha       = 1;
+				
+				GL.translate(historyBackground.getX(), historyBackground.getY(), 0);
+				
+				GL.beginClipping(0, 0, historyBackground.getWidth(), historyBackground.getHeight());
 				{
-					font.render(message.toString(), 2, yOffset + 2, 0, scale, null);
-					
-					yOffset += height;
+					for (Message message : history)
+					{
+						long postTime = message.postTime;
+						
+						if (currentTime <= postTime + 11000)
+						{
+							if (currentTime >= postTime + 10000)
+							{
+								int diff = (int)(currentTime - postTime - 10000);
+								
+								alpha = 1 - diff / 1000f;
+							}
+							else
+							{
+								alpha = 1;
+							}
+							
+							GL.setColor(0, 0, 0, alpha - 0.2f);
+							
+							messageBackground.render();
+							
+							
+							GL.setColor(1, 1, 1, alpha);
+							
+							font.render(message.toString(), 2, yOffset + 2, 0, scale, null);
+						
+							yOffset += height;
+						}
+					}
 				}
+				GL.endClipping();
 			}
-			GL.endClipping();
-			
+			else
+			{
+				GL.setColor(0, 0, 0, 0.85f);
+				
+				textField.render();
+	//			System.out.println(textField.getText());
+				
+				historyBackground.render();
+				
+				GL.setColor(1, 1, 1, 1);
+				
+				GL.translate(historyBackground.getX(), historyBackground.getY(), 0);
+				
+				GL.beginClipping(0, 0, historyBackground.getWidth(), historyBackground.getHeight());
+				{
+					for (Message message : history)
+					{
+						font.render(message.toString(), 2, yOffset + 2, 0, scale, null);
+						
+						yOffset += height;
+					}
+				}
+				GL.endClipping();
+			}
+				
 			GL.setColor(color);
 		}
 		GL.popMatrix();
@@ -352,6 +408,8 @@ public class ChatBox
 	public void postMessage(String message, Player sender)
 	{
 		Message m = new Message(message, sender);
+		
+		m.post();
 		
 		history.add(0, m);
 	}

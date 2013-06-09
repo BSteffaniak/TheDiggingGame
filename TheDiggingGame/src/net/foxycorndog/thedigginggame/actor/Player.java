@@ -44,11 +44,20 @@ public class Player extends Actor
 	{
 		super(map, 16, 32, 1.25f, 25);
 		
-		Inventory inventory = new Inventory(9 * 4);
+		float guiScale  = getMap().getGame().getGUIScale();
+		
+		float scale     = guiScale / 3;
+		
+		float colOffset = 6;
+		float hMargin   = 10;
+		float vMargin   = 10;
+		
+		Inventory inventory = new Inventory(9, 4, Inventory.PLAYER_INVENTORY_IMAGE);
+		inventory.loadVertices(guiScale, hMargin, vMargin, colOffset, new float[] { 7, 4, 0, 0 });
 		
 		setInventory(inventory);
 		
-		quickBar = new QuickBar();
+		quickBar = new QuickBar(this);
 		
 		SpriteSheet sprites = null;
 		
@@ -492,15 +501,21 @@ public class Player extends Actor
 		private	int		width;
 		private	int		selectedIndex;
 		
+		private	Player	player;
+		
 		private Bundle	bundle;
 		
 		private Texture	slots[], selectedSlots[];
 		
 		/**
 		 * Create the bar that shows what items are on the hot-keys.
+		 * 
+		 * @param player The Player that owns the QuickBar.
 		 */
-		public QuickBar()
+		public QuickBar(Player player)
 		{
+			this.player     = player;
+			
 			this.slotCount = 9;
 			
 			bundle = new Bundle(3 * 2 * slotCount, 2, true, false);
@@ -613,13 +628,17 @@ public class Player extends Actor
 		{
 			GL.pushMatrix();
 			{
-				GL.translate(Frame.getWidth() / 2 - width / 2, 0, 12);
+				float guiScale = getMap().getGame().getGUIScale();
+				
+				GL.translate(Frame.getWidth() / 2 - (width * guiScale) / 2, 0, 12);
 				
 				Texture slot         = null;
 				Texture selectedSlot = null;
 				
 				GL.pushMatrix();
 				{
+					GL.scale(guiScale, guiScale, 1);
+					
 					for (int i = 0; i < slotCount; i++)
 					{
 						if (slots[i] != null)
@@ -645,11 +664,9 @@ public class Player extends Actor
 				}
 				GL.popMatrix();
 				
-				int ts = Tile.getTileSize();
+				GL.translate(-guiScale, 0, 0);
 				
-				GL.translate(ts / 2, ts / 2 - 2, 1);
-				
-				getInventory().render();//0, slotCount);
+				getInventory().render(0, slotCount);
 			}
 			GL.popMatrix();
 		}

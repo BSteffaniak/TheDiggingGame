@@ -940,7 +940,7 @@ public class Map
 			
 			for (Chunk chunk : chunks)
 			{
-				if (chunk.isInView(game.getScale()))
+				if (chunk.isInView(game.getMapScale()))
 				{
 					task.run(chunk);
 				}
