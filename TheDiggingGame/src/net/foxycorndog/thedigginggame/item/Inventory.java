@@ -2,11 +2,15 @@ package net.foxycorndog.thedigginggame.item;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 import net.foxycorndog.jfoxylib.components.Button;
 import net.foxycorndog.jfoxylib.components.Image;
 import net.foxycorndog.jfoxylib.events.ButtonEvent;
 import net.foxycorndog.jfoxylib.events.ButtonListener;
+import net.foxycorndog.jfoxylib.events.MouseEvent;
+import net.foxycorndog.jfoxylib.events.MouseListener;
 import net.foxycorndog.jfoxylib.font.Font;
 import net.foxycorndog.jfoxylib.input.Mouse;
 import net.foxycorndog.jfoxylib.opengl.GL;
@@ -27,6 +31,8 @@ import net.foxycorndog.thedigginggame.item.tile.Tile;
  */
 public class Inventory
 {
+	private	boolean			doubleClicked;
+	
 	private	int				capacity;
 	private	int				width, height;
 	
@@ -34,12 +40,14 @@ public class Inventory
 	private	float			horizontalMargin, verticalMargin;
 	private	float			colOffset;
 	
-	private	Slot			currentItem;
+	private	Slot			currentItem, lastItem;
 	
 	private	Image			currentItemImage;
 	private	Image			backgroundImage;
 	
 	private	ButtonListener	listener;
+	
+	private	MouseListener	mouseListener;
 	
 	private	Bundle			bundle;
 	
@@ -104,6 +112,73 @@ public class Inventory
 		this.currentItemImage = new Image(null);
 		currentItemImage.setImage(Item.getSprites());
 		
+		slotCounters          = new int[capacity];
+		
+		mouseListener = new MouseListener()
+		{
+			private	long	clickTime;
+			
+			public void mouseUp(MouseEvent event)
+			{
+			}
+			
+			public void mouseReleased(MouseEvent event)
+			{
+				int button = event.getButton();
+				
+				if (button == Mouse.LEFT_MOUSE_BUTTON)
+				{
+					long current = System.currentTimeMillis();
+					
+					if (current - clickTime < 300)
+					{
+						if (lastItem == null || currentItem == null || lastItem.item == currentItem.item)
+						{
+							doubleClicked = true;
+						}
+					}
+					
+					clickTime = current;
+				}
+				
+				if (currentItem != null && currentItem.instances <= 0)
+				{
+					currentItem = null;
+				}
+				
+				if (currentItem != null && currentItem.instances <= 0)
+				{
+					currentItem.empty();
+				}
+			}
+			
+			public void mousePressed(MouseEvent event)
+			{
+				for (int id = 0; id < buttons.length; id++)
+				{
+					slotCounters[id] = 0;
+				}
+			}
+			
+			public void mouseMoved(MouseEvent event)
+			{
+			}
+			
+			public void mouseExited(MouseEvent event)
+			{
+			}
+			
+			public void mouseEntered(MouseEvent event)
+			{
+			}
+			
+			public void mouseDown(MouseEvent event)
+			{
+			}
+		};
+		
+		Mouse.addMouseListener(mouseListener);
+		
 		listener = new ButtonListener()
 		{
 			public void buttonUnHovered(ButtonEvent event)
@@ -117,60 +192,135 @@ public class Inventory
 				
 				int    button = event.getButton();
 				
-				for (int id = 0; id < buttons.length; id++)
+				if (doubleClicked)
 				{
-					if (source == buttons[id])
+					Slot slot = null;
+					
+					if (currentItem != null)
 					{
-						if (button == Mouse.LEFT_MOUSE_BUTTON)
+						slot = currentItem;
+					}
+					else if (lastItem != null)
+					{
+						slot = lastItem;
+					}
+					
+					ArrayList<Slot>	slotList = new ArrayList<Slot>();
+					slotList.addAll(Arrays.asList(slots));
+					
+					Collections.sort(slotList);
+					
+					ArrayList<Integer> ids = new ArrayList<Integer>();
+					
+					for (Slot s : slotList)
+					{
+						for (int id = 0; id < slots.length; id++)
 						{
-							if (currentItem != null)
+							if (slots[id] == s)
 							{
-								currentItem = addItems(id, currentItem, currentItem.instances);
-							}
-							else
-							{
-								if (slots[id].item != null)
-								{
-									currentItem = slots[id].clone();
-									
-									removeItems(id, slots[id].instances);
-								}
+								ids.add(id);
+								
+								break;
 							}
 						}
-						else if (button == Mouse.RIGHT_MOUSE_BUTTON)
+					}
+					
+					for (int counter = 0; counter < slotList.size(); counter++)
+					{
+						if (slot == null || slot.instances >= slot.item.getStackSize())
 						{
-							if (currentItem != null)
-							{
-								currentItem = addItem(id, currentItem);
-							}
-							else
-							{
-								if (slots[id].item != null)
-								{
-									currentItem = slots[id].clone();
-									
-									int bef = currentItem.instances;
-									int rem = currentItem.instances /= 2;
-									
-									removeItems(id, slots[id].instances - rem);
-									
-									currentItem.instances = bef - rem;
-								}
-							}
+							break;
 						}
 						
-						if (currentItem != null)
+						Slot listSlot = slotList.get(counter);
+						
+						if (slot.item == slotList.get(counter).item)
 						{
-							Item item = currentItem.item;
+							int available = Math.min(slot.item.getStackSize() - slot.instances, listSlot.instances);
 							
-							currentItemImage.setSpriteX(item.getX());
-							currentItemImage.setSpriteY(item.getY());
-							currentItemImage.setSpriteCols(item.getCols());
-							currentItemImage.setSpriteRows(item.getRows());
-							currentItemImage.updateTexture();
+							slot.addInstances(available);
+							
+							listSlot.removeInstances(available);
+							
+							if (listSlot.instances <= 0)
+							{
+								listSlot.empty();
+								
+								int id = ids.get(counter);
+								
+								slotQueue.enqueue(id);
+							}
 						}
-						
-						break;
+					}
+					
+					currentItem   = slot;
+					
+					doubleClicked = false;
+				}
+				else
+				{
+					for (int id = 0; id < buttons.length; id++)
+					{
+						if (source == buttons[id])
+						{
+							if (slotCounters[id] <= 0)
+							{
+								if (button == Mouse.LEFT_MOUSE_BUTTON)
+								{
+									if (currentItem != null)
+									{
+										lastItem    = currentItem;
+										
+										currentItem = addItems(id, currentItem, currentItem.instances);
+									}
+									else
+									{
+										if (slots[id].item != null)
+										{
+											currentItem = slots[id].clone();
+											
+											removeItems(id, slots[id].instances);
+										}
+									}
+								}
+								else if (button == Mouse.RIGHT_MOUSE_BUTTON)
+								{
+									if (currentItem != null)
+									{
+										lastItem    = currentItem;
+										
+										currentItem = addItem(id, currentItem);
+									}
+									else
+									{
+										if (slots[id].item != null)
+										{
+											lastItem    = currentItem;
+											
+											currentItem = slots[id].clone();
+											
+											int bef     = currentItem.instances;
+											int rem     = currentItem.instances /= 2;
+											
+											removeItems(id, slots[id].instances - rem);
+											
+											currentItem.instances = bef - rem;
+										}
+									}
+								}
+								
+								if (currentItem != null)
+								{
+									Item item = currentItem.item;
+									
+									currentItemImage.setSpriteX(item.getX());
+									currentItemImage.setSpriteY(item.getY());
+									currentItemImage.setSpriteCols(item.getCols());
+									currentItemImage.setSpriteRows(item.getRows());
+									currentItemImage.updateTexture();
+								}
+							}
+						}
 					}
 				}
 			}
@@ -185,7 +335,79 @@ public class Inventory
 				{
 					if (source == buttons[id])
 					{
-						
+						if (slotCounters[id] <= 0)
+						{
+							if (currentItem != null && (slots[id].item == null || slots[id].item == currentItem.item))
+							{
+								if (button == Mouse.LEFT_MOUSE_BUTTON)
+								{
+									int num = 0;
+									int sum = currentItem.instances;
+									
+									for (int counter = 0; counter < slotCounters.length; counter++)
+									{
+										if (slotCounters[counter] > 0)
+										{
+											sum += slotCounters[counter];
+											
+											num++;
+										}
+									}
+									
+									int   remainder = 0;
+									
+									float avg       = sum / (num + 1);
+									
+									int   average   = (int)Math.round(Math.floor(avg));
+									
+									if (average > 0)
+									{
+										remainder = sum - (average * (num + 1));
+									}
+									
+									currentItem.instances = remainder;
+									
+									if (average > 0)
+									{
+										for (int counter = 0; counter < slotCounters.length; counter++)
+										{
+											if (slotCounters[counter] > 0)
+											{
+												slotCounters[counter] = average;
+												
+												slots[counter].item = currentItem.item;
+												slots[counter].instances = average;
+												
+												slotQueue.enqueue(counter);
+											}
+										}
+									}
+									
+									slotCounters[id]    = slots[id].instances + average;
+									
+									slots[id].instances = slotCounters[id];
+									slots[id].item      = currentItem.item;
+									
+									slotQueue.enqueue(id);
+									
+									if (currentItem.instances <= 0)
+									{
+										lastItem = currentItem;
+									}
+								}
+								else if (button == Mouse.RIGHT_MOUSE_BUTTON)
+								{
+									if (currentItem != null)
+									{
+										lastItem    = currentItem;
+										
+										currentItem = addItems(id, currentItem, 1);
+										
+										slotCounters[id]++;
+									}
+								}
+							}
+						}
 						
 						break;
 					}
@@ -742,39 +964,39 @@ public class Inventory
 		
 		float yOffset   = 0;
 		
-		for (int y = 0; y < height; y++)
+		for (int i = 0; i < amount; i++)
 		{
-			for (int x = 0; x < width; x++)
+			int x = (i + startId) % width;
+			int y = (i + startId) / width;
+			
+			if (x == 0)
 			{
-				if (x == 0)
-				{
-					yOffset += rowOffsets[y];
-				}
+				yOffset += rowOffsets[y];
+			}
+			
+			float xLoc = (x * (rectSize + horizontalMargin) + colOffset);
+			float yLoc = (y * (rectSize + verticalMargin) + yOffset);
+			
+			Slot slot = slots[x + y * width];
+			
+			if (slot.instances > 1)
+			{
+				String num   = slot.instances + "";
 				
-				float xLoc = (x * (rectSize + horizontalMargin) + colOffset);
-				float yLoc = (y * (rectSize + verticalMargin) + yOffset);
+				int    width = font.getWidth(num);
 				
-				Slot slot = slots[x + y * width];
+				float  fontX = xLoc + rectSize - (width * fontScale) / 2;
+				float  fontY = yLoc - font.getGlyphHeight() / 2;
 				
-				if (slot.instances > 1)
-				{
-					String num   = slot.instances + "";
-					
-					int    width = font.getWidth(num);
-					
-					float  fontX = xLoc + rectSize - (width * fontScale) / 2;
-					float  fontY = yLoc - font.getGlyphHeight() / 2;
-					
-					GL.setColor(0, 0, 0, 1);
-					font.render(num, fontX + 1, fontY - 1, 0, fontScale, null);
-					
-					GL.setColor(1, 1, 1, 1);
-					font.render(num, fontX, fontY, 0, fontScale, null);
-				}
+				GL.setColor(0, 0, 0, 1);
+				font.render(num, fontX + 1, fontY - 1, 0, fontScale, null);
+				
+				GL.setColor(1, 1, 1, 1);
+				font.render(num, fontX, fontY, 0, fontScale, null);
 			}
 		}
 		
-		if (currentItem != null)
+		if (currentItem != null && currentItem.instances > 0)
 		{
 			GL.pushMatrix();
 			{
@@ -878,6 +1100,8 @@ public class Inventory
 		{
 			button.dispose();
 		}
+		
+		Mouse.removeMouseListener(mouseListener);
 	}
 	
 	/**
@@ -917,11 +1141,33 @@ public class Inventory
 	 * @version	Jun 5, 2013 at 2:50:37 PM
 	 * @version	v0.3
 	 */
-	private class Slot
+	private class Slot implements Comparable
 	{
 		private	int		instances;
 		
 		private	Item	item;
+		
+		/**
+		 * Create a Slot with no specified Item.
+		 */
+		public Slot()
+		{
+			
+		}
+		
+		/**
+		 * Create a Slot instances with the specified Item and number
+		 * of instances.
+		 * 
+		 * @param item The Item that the Slot holds.
+		 * @param instances The number of Instances of the Item that are
+		 * 		in the Slot.
+		 */
+		public Slot(Item item, int instances)
+		{
+			this.item      = item;
+			this.instances = instances;
+		}
 		
 		/**
 		 * Increments the number of instances that the Slot has of the
@@ -1055,6 +1301,16 @@ public class Inventory
 		public String toString()
 		{
 			return item + ", " + instances;
+		}
+
+		/**
+		 * @see java.lang.Comparable#compareTo(java.lang.Object)
+		 */
+		public int compareTo(Object o)
+		{
+			Slot slot = (Slot)o;
+			
+			return instances - slot.instances;
 		}
 	}
 }
