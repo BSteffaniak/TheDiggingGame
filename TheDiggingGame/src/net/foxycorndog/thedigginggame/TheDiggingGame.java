@@ -159,6 +159,53 @@ public class TheDiggingGame
 	{
 		return resourcesLocation;
 	}
+
+	/**
+	 * Get the scale in which the Map is rendered.
+	 * 
+	 * @return The scale in which the Map is rendered.
+	 */
+	public float getMapScale()
+	{
+		return mapScale;
+	}
+
+	/**
+	 * Get the scale in which the GUI is rendered.
+	 * 
+	 * @return The scale in which the GUI is rendered.
+	 */
+	public float getGUIScale()
+	{
+		return guiScale;
+	}
+
+	/**
+	 * Start the game. Exits the current menu that it is in.
+	 */
+	public void startGame()
+	{
+		map = new Map(this);
+
+//		map.load("world");
+		map.generateChunk(0, 0);
+
+		player = new Player(map);
+		player.setLocation(16 * 6, 16 * 13);
+		player.setFocused(true);
+
+		map.addActor(player);
+
+		cursor = new Cursor(Tile.getTileSize());
+
+		player.center();
+
+		editing = Chunk.MIDDLEGROUND;
+
+		chatBox = new ChatBox(player);
+
+		GL.setClearColor(0.2f, 0.5f, 0.8f, 1);
+	}
 	
 	/**
 	 * Initialize the data.
@@ -282,49 +329,6 @@ public class TheDiggingGame
 	}
 	
 	/**
-	 * Start the game. Exits the current menu that it is in.
-	 */
-	public void startGame()
-	{
-		map = new Map(this);
-		
-//		map.load("world");
-		map.generateChunk(0, 0);
-		
-		player = new Player(map);
-		player.setLocation(16 * 6, 16 * 13);
-		player.setFocused(true);
-		
-		map.addActor(player);
-		
-		cursor = new Cursor(Tile.getTileSize());
-		
-		player.center();
-		
-		editing = Chunk.MIDDLEGROUND;
-		
-		chatBox = new ChatBox(player);
-		
-		GL.setClearColor(0.2f, 0.5f, 0.8f, 1);
-	}
-	
-	/**
-	 * @return The scale in which the Map is rendered.
-	 */
-	public float getMapScale()
-	{
-		return mapScale;
-	}
-	
-	/**
-	 * @return The scale in which the GUI is rendered.
-	 */
-	public float getGUIScale()
-	{
-		return guiScale;
-	}
-	
-	/**
 	 * Method that renders using the Ortho method.
 	 */
 	public void render2D()
@@ -344,7 +348,7 @@ public class TheDiggingGame
 		
 		if (showInventory)
 		{
-			float x = Frame.getWidth() / 2 - player.getInventory().getBackgroundImage().getWidth() / 2;
+			float x = Frame.getWidth()  / 2 - player.getInventory().getBackgroundImage().getWidth()  / 2;
 			float y = Frame.getHeight() / 2 - player.getInventory().getBackgroundImage().getHeight() / 2;
 			
 			GL.translate(x, y, 19);
