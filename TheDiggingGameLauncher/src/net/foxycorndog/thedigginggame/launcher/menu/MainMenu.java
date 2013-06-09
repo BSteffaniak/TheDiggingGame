@@ -205,6 +205,16 @@ public class MainMenu extends Menu
 			{
 				
 			}
+
+			public void buttonUp(ButtonEvent event)
+			{
+				
+			}
+
+			public void buttonDown(ButtonEvent event)
+			{
+				
+			}
 		};
 
 		playButton.addButtonListener(buttonListener);

@@ -96,6 +96,16 @@ public class OptionsMenu extends Menu
 			{
 				
 			}
+
+			public void buttonUp(ButtonEvent event)
+			{
+				
+			}
+
+			public void buttonDown(ButtonEvent event)
+			{
+				
+			}
 		};
 		
 		playOfflineButton = new Button(this);

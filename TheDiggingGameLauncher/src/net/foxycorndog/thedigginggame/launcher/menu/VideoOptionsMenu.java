@@ -59,6 +59,16 @@ public class VideoOptionsMenu extends Menu
 			{
 				
 			}
+
+			public void buttonUp(ButtonEvent event)
+			{
+				
+			}
+
+			public void buttonDown(ButtonEvent event)
+			{
+				
+			}
 		};
 		
 		vSyncButton = new Button(this);

@@ -1,5 +1,6 @@
 package net.foxycorndog.thedigginggame.chat;
 
+import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.thedigginggame.actor.Actor;
 import net.foxycorndog.thedigginggame.item.tile.Tile;
 
@@ -113,6 +114,20 @@ public class Command
 				actor.getInventory().removeItem(tile, quantity);
 				
 				return "Removing " + quantity + " " + tile + " from player";
+			}
+			
+			index = 0;
+			
+			if (split[index++].equals("vsync"))
+			{
+				if (split.length == 1)
+				{
+					Frame.setVSyncEnabled(!Frame.isVSyncEnabled());
+					
+					boolean vsync = Frame.isVSyncEnabled();
+					
+					return "Toggling VSync to: " + (vsync ? "ON" : "OFF");
+				}
 			}
 			
 			response = "Unknown command.";

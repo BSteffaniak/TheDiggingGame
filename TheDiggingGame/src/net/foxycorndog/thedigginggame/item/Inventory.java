@@ -7,6 +7,8 @@ import net.foxycorndog.jfoxylib.components.Button;
 import net.foxycorndog.jfoxylib.components.Image;
 import net.foxycorndog.jfoxylib.events.ButtonEvent;
 import net.foxycorndog.jfoxylib.events.ButtonListener;
+import net.foxycorndog.jfoxylib.font.Font;
+import net.foxycorndog.jfoxylib.input.Mouse;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
@@ -28,11 +30,22 @@ public class Inventory
 	private	int				capacity;
 	private	int				width, height;
 	
+	private	float			scale;
+	private	float			horizontalMargin, verticalMargin;
+	private	float			colOffset;
+	
+	private	Slot			currentItem;
+	
+	private	Image			currentItemImage;
 	private	Image			backgroundImage;
 	
 	private	ButtonListener	listener;
 	
 	private	Bundle			bundle;
+	
+	private	int				slotCounters[];
+	
+	private	float			rowOffsets[];
 	
 	private	Button			buttons[];
 	
@@ -88,6 +101,9 @@ public class Inventory
 			slots[i] = new Slot();
 		}
 		
+		this.currentItemImage = new Image(null);
+		currentItemImage.setImage(Item.getSprites());
+		
 		listener = new ButtonListener()
 		{
 			public void buttonUnHovered(ButtonEvent event)
@@ -99,6 +115,72 @@ public class Inventory
 			{
 				Button source = event.getSource();
 				
+				int    button = event.getButton();
+				
+				for (int id = 0; id < buttons.length; id++)
+				{
+					if (source == buttons[id])
+					{
+						if (button == Mouse.LEFT_MOUSE_BUTTON)
+						{
+							if (currentItem != null)
+							{
+								currentItem = addItems(id, currentItem, currentItem.instances);
+							}
+							else
+							{
+								if (slots[id].item != null)
+								{
+									currentItem = slots[id].clone();
+									
+									removeItems(id, slots[id].instances);
+								}
+							}
+						}
+						else if (button == Mouse.RIGHT_MOUSE_BUTTON)
+						{
+							if (currentItem != null)
+							{
+								currentItem = addItem(id, currentItem);
+							}
+							else
+							{
+								if (slots[id].item != null)
+								{
+									currentItem = slots[id].clone();
+									
+									int bef = currentItem.instances;
+									int rem = currentItem.instances /= 2;
+									
+									removeItems(id, slots[id].instances - rem);
+									
+									currentItem.instances = bef - rem;
+								}
+							}
+						}
+						
+						if (currentItem != null)
+						{
+							Item item = currentItem.item;
+							
+							currentItemImage.setSpriteX(item.getX());
+							currentItemImage.setSpriteY(item.getY());
+							currentItemImage.setSpriteCols(item.getCols());
+							currentItemImage.setSpriteRows(item.getRows());
+							currentItemImage.updateTexture();
+						}
+						
+						break;
+					}
+				}
+			}
+			
+			public void buttonDown(ButtonEvent event)
+			{
+				Button source = event.getSource();
+				
+				int    button = event.getButton();
+				
 				for (int id = 0; id < buttons.length; id++)
 				{
 					if (source == buttons[id])
@@ -108,6 +190,11 @@ public class Inventory
 						break;
 					}
 				}
+			}
+			
+			public void buttonUp(ButtonEvent event)
+			{
+				
 			}
 			
 			public void buttonPressed(ButtonEvent event)
@@ -121,9 +208,9 @@ public class Inventory
 			}
 		};
 		
-		bundle  = new Bundle(capacity * 3 * 2, 2, true, false);
+		bundle    = new Bundle(capacity * 3 * 2, 2, true, false);
 		
-		buttons = new Button[capacity];
+		buttons   = new Button[capacity];
 		
 		slotQueue = new Queue<Integer>();
 	}
@@ -142,7 +229,7 @@ public class Inventory
 	 */
 	public void loadVertices(float scale, float horizontalMargin, float verticalMargin, float colOffset, float rowOffsets[])
 	{
-		float tileScale = scale / 2;
+		float tileScale       = scale / 2;
 		
 		horizontalMargin *= scale;
 		verticalMargin   *= scale;
@@ -152,6 +239,12 @@ public class Inventory
 		{
 			rowOffsets[i] *= scale;
 		}
+		
+		this.scale            = scale;
+		this.horizontalMargin = horizontalMargin;
+		this.verticalMargin   = verticalMargin;
+		this.colOffset        = colOffset;
+		this.rowOffsets       = rowOffsets;
 		
 		bundle.beginEditingVertices();
 		{
@@ -189,6 +282,19 @@ public class Inventory
 	}
 	
 	/**
+	 * Set all of the Slots' Buttons enabled or disabled.
+	 * 
+	 * @param enabled Whether to enable or disable the Buttons.
+	 */
+	public void setEnabled(boolean enabled)
+	{
+		for (int id = 0; id < buttons.length; id++)
+		{
+			buttons[id].setEnabled(enabled);
+		}
+	}
+	
+	/**
 	 * Get the Image that appears behind the Inventory.
 	 * 
 	 * @return The Image that appears behind the Inventory.
@@ -207,6 +313,103 @@ public class Inventory
 	public Item getItem(int slotId)
 	{
 		return slots[slotId].item;
+	}
+	
+	/**
+	 * Add the one Item instance from the Slot to the new Slot at the
+	 * specified Slot ID.
+	 * 
+	 * @param id The ID of the Slot to add to.
+	 * @param slot The Slot to add to the new Slot ID.
+	 * @return A Slot instance describing what is left after adding
+	 * 		the two Slots together. If the result is null, the Slots
+	 * 		had nothing remaining after the addition.
+	 */
+	public Slot addItem(int id, Slot slot)
+	{
+		return addItems(id, slot, 1);
+	}
+	
+	/**
+	 * Add the Slot to the new Slot at the specified Slot ID.
+	 * 
+	 * @param id The ID of the Slot to add to.
+	 * @param slot The Slot to add to the new Slot ID.
+	 * @param quantity The amount of instances to add to the new Slot
+	 * 		from the old Slot.
+	 * @return A Slot instance describing what is left after adding
+	 * 		the two Slots together. If the result is null, the Slots
+	 * 		had nothing remaining after the addition.
+	 */
+	public Slot addItems(int id, Slot slot, int quantity)
+	{
+		slotQueue.enqueue(id);
+			
+		int available = Math.min(quantity, slot.instances);
+		
+		if (slot.item == slots[id].item)
+		{
+			int bef = slot.instances;
+			
+			slots[id].addInstances(available);
+			
+			if (slots[id].instances > slot.item.getStackSize())
+			{
+				slots[id].instances = bef;
+				
+				Slot temp = slots[id];
+				
+				slots[id] = slot;
+				
+				if (temp.item == null)
+				{
+					temp = null;
+				}
+				
+				return temp;
+			}
+			
+			Slot leftOver      = new Slot();
+			
+			leftOver.item      = slot.item;
+			leftOver.instances = bef - available;
+			
+			if (leftOver.instances <= 0)
+			{
+				leftOver = null;
+			}
+			
+			return leftOver;
+		}
+		else
+		{
+			Slot temp = slot.clone();
+			
+			if (slots[id].item == null)
+			{
+				Slot newSlot = new Slot();
+				
+				newSlot.item      = temp.item;
+				newSlot.instances = available;
+				
+				slots[id] = newSlot;
+				
+				temp.removeInstances(newSlot.instances);
+			}
+			else
+			{
+				temp = slots[id];
+				
+				slots[id] = slot;
+			}
+			
+			if (temp.item == null)
+			{
+				temp = null;
+			}
+			
+			return temp;
+		}
 	}
 	
 	/**
@@ -253,7 +456,7 @@ public class Inventory
 					}
 					else
 					{
-						slot.addInstance(numLeft);
+						slot.addInstances(numLeft);
 						
 						return quantity;
 					}
@@ -283,7 +486,7 @@ public class Inventory
 					}
 					else
 					{
-						slot.addInstance(numLeft);
+						slot.addInstances(numLeft);
 						
 						return quantity;
 					}
@@ -292,6 +495,48 @@ public class Inventory
 		}
 		
 		return quantity - numLeft;
+	}
+	
+	/**
+	 * Remove one of the instances of an Item at the specified Slot ID.
+	 * 
+	 * @param id The ID of the Slot to remove from.
+	 * @return Whether anything was removed from the Inventory.
+	 */
+	public boolean removeItem(int id)
+	{
+		if (slots[id].instances > 0)
+		{
+			slots[id].removeInstance();
+			
+			slotQueue.enqueue(id);
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Remove one of the instances of an Item at the specified Slot ID.
+	 * 
+	 * @param id The ID of the Slot to remove from.
+	 * @param quantity The number of instances to remove from the Slot
+	 * 		with the specified ID.
+	 * @return Whether anything was removed from the Inventory.
+	 */
+	public boolean removeItems(int id, int quantity)
+	{
+		if (slots[id].instances > 0)
+		{
+			slots[id].removeInstances(quantity);
+			
+			slotQueue.enqueue(id);
+			
+			return true;
+		}
+		
+		return false;
 	}
 	
 	/**
@@ -331,7 +576,7 @@ public class Inventory
 				
 				if (slot.instances > numLeft)
 				{
-					slot.removeInstance(numLeft);
+					slot.removeInstances(numLeft);
 					
 					return quantity;
 				}
@@ -477,17 +722,101 @@ public class Inventory
 //			for (int i = 0; i < 100; i++)
 			buttons[id].update();
 			
-			if (id >= startId && id < startId + amount)
-			{
-				buttons[id].setEnabled(true);
-			}
-			else
-			{
-				buttons[id].setEnabled(false);
-			}
+//			if (id >= startId && id < startId + amount)
+//			{
+//				buttons[id].setEnabled(true);
+//			}
+//			else
+//			{
+//				buttons[id].setEnabled(false);
+//			}
 		}
 		
 		bundle.render(GL.TRIANGLES, startId * 3 * 2, amount * 3 * 2, Item.getSprites());
+
+		float fontScale = scale / 2;
+		
+		float rectSize  = Tile.getTileSize() * (scale / 2);
+		
+		Font  font      = TheDiggingGame.getFont();
+		
+		float yOffset   = 0;
+		
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				if (x == 0)
+				{
+					yOffset += rowOffsets[y];
+				}
+				
+				float xLoc = (x * (rectSize + horizontalMargin) + colOffset);
+				float yLoc = (y * (rectSize + verticalMargin) + yOffset);
+				
+				Slot slot = slots[x + y * width];
+				
+				if (slot.instances > 1)
+				{
+					String num   = slot.instances + "";
+					
+					int    width = font.getWidth(num);
+					
+					float  fontX = xLoc + rectSize - (width * fontScale) / 2;
+					float  fontY = yLoc - font.getGlyphHeight() / 2;
+					
+					GL.setColor(0, 0, 0, 1);
+					font.render(num, fontX + 1, fontY - 1, 0, fontScale, null);
+					
+					GL.setColor(1, 1, 1, 1);
+					font.render(num, fontX, fontY, 0, fontScale, null);
+				}
+			}
+		}
+		
+		if (currentItem != null)
+		{
+			GL.pushMatrix();
+			{
+				float scale = this.scale / 2;
+				
+				GL.resetMatrix();
+				GL.translate(0, 0, 20);
+				
+				int x = Math.round((Mouse.getX() / scale) - rectSize / scale / 2);
+				int y = Math.round((Mouse.getY() / scale) - rectSize / scale / 2);
+				
+				currentItemImage.setLocation(x, y);
+				
+				GL.pushMatrix();
+				{
+					GL.scale(scale, scale, 1);
+					
+					currentItemImage.render();
+				}
+				GL.popMatrix();
+				
+				x *= scale;
+				y *= scale;
+				
+				if (currentItem.instances > 1)
+				{
+					String num   = currentItem.instances + "";
+					
+					int    width = font.getWidth(num);
+					
+					float  fontX = x + rectSize - (width * fontScale) / 2;
+					float  fontY = y - font.getGlyphHeight() / 2;
+					
+					GL.setColor(0, 0, 0, 1);
+					font.render(num, fontX + 1, fontY - 1, 0, fontScale, null);
+					
+					GL.setColor(1, 1, 1, 1);
+					font.render(num, fontX, fontY, 0, fontScale, null);
+				}
+			}
+			GL.popMatrix();
+		}
 	}
 	
 	/**
@@ -610,7 +939,7 @@ public class Inventory
 		 * @param num The amount of times to increment the number of
 		 * 		instances.
 		 */
-		public void addInstance(int num)
+		public void addInstances(int num)
 		{
 			instances += num;
 		}
@@ -622,6 +951,11 @@ public class Inventory
 		public void removeInstance()
 		{
 			instances--;
+			
+			if (instances <= 0)
+			{
+				empty();
+			}
 		}
 		
 		/**
@@ -631,9 +965,14 @@ public class Inventory
 		 * @param num The amount of times to decrement the number of
 		 * 		instances.
 		 */
-		public void removeInstance(int num)
+		public void removeInstances(int num)
 		{
 			instances -= num;
+			
+			if (instances <= 0)
+			{
+				empty();
+			}
 		}
 		
 		/**
@@ -687,6 +1026,21 @@ public class Inventory
 		public boolean hasSpace(int num)
 		{
 			return instances + num <= item.getStackSize();
+		}
+		
+		/**
+		 * Return a clone Object of this Slot.
+		 * 
+		 * @see java.lang.Object#clone()
+		 */
+		public Slot clone()
+		{
+			Slot newSlot = new Slot();
+			
+			newSlot.instances = instances;
+			newSlot.item = item;
+			
+			return newSlot;
 		}
 		
 		/**

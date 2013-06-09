@@ -424,11 +424,11 @@ public class Player extends Actor
 
 				if (rotation != 0)
 				{
-					GL.translate(2, 10, 0);
+					GL.translate(2, 12, 0);
 					
 					GL.rotate(0, 0, rotation);
 					
-					GL.translate(-2, -10, 0);
+					GL.translate(-2, -12, 0);
 				}
 			}
 			
@@ -463,11 +463,11 @@ public class Player extends Actor
 
 				if (rotation != 0)
 				{
-					GL.translate(2, 10, 0);
+					GL.translate(2, 12, 0);
 					
 					GL.rotate(0, 0, rotation);
 					
-					GL.translate(-2, -10, 0);
+					GL.translate(-2, -12, 0);
 				}
 			}
 			

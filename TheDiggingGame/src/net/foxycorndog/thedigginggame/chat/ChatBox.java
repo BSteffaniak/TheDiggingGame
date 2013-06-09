@@ -34,6 +34,8 @@ public class ChatBox
 {
 	private	boolean				open;
 	
+	private float				scale;
+	
 	private	Image				historyBackground, messageBackground;
 	private	Image				textFieldImage;
 	
@@ -41,9 +43,11 @@ public class ChatBox
 	
 	private	ArrayList<Message>	history;
 	
-	public ChatBox(final Player player)
+	public ChatBox(final Player player, float scale)
 	{
-		history = new ArrayList<Message>();
+		this.scale = scale;
+		
+		history    = new ArrayList<Message>();
 		
 		BufferedImage image = new BufferedImage(1, 1, BufferedImage.BITMASK);
 		
@@ -54,17 +58,17 @@ public class ChatBox
 		
 		g.dispose();
 		
-		Texture white = new Texture(image);
+		Texture white   = new Texture(image);
 		
-		Font  font    = TheDiggingGame.getFont();
+		Font    font    = TheDiggingGame.getFont();
 		
-		float scale[] = GL.getAmountScaled();
-		
-		int height  = Math.round(font.getGlyphHeight() * scale[1] * (1 / 0.8f));
+//		float   scale[] = GL.getAmountScaled();
+//		
+//		int     height  = Math.round(font.getGlyphHeight() * scale[1] * (1 / 0.8f));
 		
 		textFieldImage = new Image(null);
 		textFieldImage.setImage(white);
-		textFieldImage.setSize(Frame.getWidth() - 20, height);
+		textFieldImage.setSize(Frame.getWidth() - 20, 0);
 		
 		textField = new TextField(null);
 		textField.setFont(font);
@@ -107,6 +111,7 @@ public class ChatBox
 						
 						if (response != null)
 						{
+							postMessage(text, player);
 							postMessage(response, player);
 						}
 					}
@@ -293,13 +298,14 @@ public class ChatBox
 	
 	public void updateSizes()
 	{
-		textFieldImage.setSize(Frame.getWidth() - 20, textFieldImage.getHeight());
+		textFieldImage.setSize(Frame.getWidth() - 20, Math.round((TheDiggingGame.getFont().getGlyphHeight() + 2) * scale));
 		
 		textField.setBackgroundImage(textFieldImage);
+		textField.setTextScale(scale);
 		
 		historyBackground.setSize(Frame.getWidth() - 20, Frame.getHeight() - 200);
 		
-		messageBackground.setSize(Frame.getWidth() - 20, 10);
+		messageBackground.setSize(Frame.getWidth() - 20, textFieldImage.getHeight());
 	}
 	
 	/**
@@ -310,12 +316,11 @@ public class ChatBox
 	 * 
 	 * @param scale The scale in which to render the ChatBox in.
 	 */
-	public void render(float scale)
+	public void render()
 	{
 		Font  font    = TheDiggingGame.getFont();
 		
-		float height  = font.getGlyphHeight() + 1;
-		float yOffset = 0;
+		float height  = font.getGlyphHeight() + 2;
 		
 		height *= scale;
 		
@@ -323,12 +328,10 @@ public class ChatBox
 		{
 			float color[] = GL.getColor();
 			
-			GL.translate(0, 0, 15);
-				
+			GL.translate(0, 0, 25);
+			
 			if (!open)
 			{
-				messageBackground.setSize(messageBackground.getWidth(), Math.round(height));
-				
 				long  currentTime = System.currentTimeMillis();
 				
 				float alpha       = 1;
@@ -361,9 +364,9 @@ public class ChatBox
 							
 							GL.setColor(1, 1, 1, alpha);
 							
-							font.render(message.toString(), 2, yOffset + 2, 0, scale, null);
-						
-							yOffset += height;
+							font.render(message.toString(), 2, 2, 1, scale, null);
+							
+							GL.translate(0, height, 0);
 						}
 					}
 				}
@@ -374,7 +377,6 @@ public class ChatBox
 				GL.setColor(0, 0, 0, 0.85f);
 				
 				textField.render();
-	//			System.out.println(textField.getText());
 				
 				historyBackground.render();
 				
@@ -386,9 +388,9 @@ public class ChatBox
 				{
 					for (Message message : history)
 					{
-						font.render(message.toString(), 2, yOffset + 2, 0, scale, null);
+						font.render(message.toString(), 2, 2, 0, scale, null);
 						
-						yOffset += height;
+						GL.translate(0, height, 0);
 					}
 				}
 				GL.endClipping();

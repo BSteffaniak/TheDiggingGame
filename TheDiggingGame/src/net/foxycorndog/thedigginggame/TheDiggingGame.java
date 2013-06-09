@@ -53,7 +53,7 @@ public class TheDiggingGame
 {
 	private					boolean			online;
 	private					boolean			tilePlaced;
-	private					boolean			showInventory;
+	private					boolean			inventoryOpen;
 	
 	private					int				fps;
 	private					int				editing;
@@ -193,6 +193,7 @@ public class TheDiggingGame
 		player = new Player(map);
 		player.setLocation(16 * 6, 16 * 13);
 		player.setFocused(true);
+		player.getInventory().setEnabled(false);
 
 		map.addActor(player);
 
@@ -202,7 +203,7 @@ public class TheDiggingGame
 
 		editing = Chunk.MIDDLEGROUND;
 
-		chatBox = new ChatBox(player);
+		chatBox = new ChatBox(player, 3);
 
 		GL.setClearColor(0.2f, 0.5f, 0.8f, 1);
 	}
@@ -293,7 +294,9 @@ public class TheDiggingGame
 						}
 						else if (code == Keyboard.KEY_TAB)
 						{
-							showInventory = !showInventory;
+							inventoryOpen = !inventoryOpen;
+							
+							player.getInventory().setEnabled(inventoryOpen);
 						}
 						else if (code == Keyboard.KEY_SLASH)
 						{
@@ -340,25 +343,37 @@ public class TheDiggingGame
 			GL.scale(mapScale, mapScale, 1);
 			map.render();
 			
-			renderCursor();
+			if (inventoryOpen)
+			{
+				
+			}
+			else
+			{
+				renderCursor();
+			}
 		}
 		GL.popMatrix();
 		
-//		chatBox.render(1);
-		
-		if (showInventory)
+		if (inventoryOpen)
 		{
 			float x = Frame.getWidth()  / 2 - player.getInventory().getBackgroundImage().getWidth()  / 2;
 			float y = Frame.getHeight() / 2 - player.getInventory().getBackgroundImage().getHeight() / 2;
 			
-			GL.translate(x, y, 19);
-			
-			player.getInventory().render(true);
+			GL.pushMatrix();
+			{
+				GL.translate(x, y, 19);
+				
+				player.getInventory().render(true);
+			}
+			GL.popMatrix();
 		}
-		else
+		if (!inventoryOpen)
 		{
 			player.getQuickBar().render();
 		}
+		
+		chatBox.render();
+		
 	}
 	
 	/**
@@ -390,100 +405,107 @@ public class TheDiggingGame
 		
 		float delta = 60f / (fps == 0 ? target : fps);
 		
-		if (Mouse.isButtonDown(Mouse.LEFT_MOUSE_BUTTON))
+		if (inventoryOpen)
 		{
-			int cursorX = cursor.getX();
-			int cursorY = cursor.getY();
 			
-			if ((cursorX != oldCursorX || cursorY != oldCursorY) || tilePlaced || editing != oldEditing)
+		}
+		else
+		{
+			if (Mouse.isButtonDown(Mouse.LEFT_MOUSE_BUTTON))
 			{
-				Tile tile = map.getTile(cursorX, cursorY, editing);
+				int cursorX = cursor.getX();
+				int cursorY = cursor.getY();
 				
-				if (map.removeTile(cursorX, cursorY, editing))
+				if ((cursorX != oldCursorX || cursorY != oldCursorY) || tilePlaced || editing != oldEditing)
 				{
-					player.getInventory().addItem(tile);
+					Tile tile = map.getTile(cursorX, cursorY, editing);
 					
-					// If the action wasnt right mouse button...
-					tilePlaced = false;
+					if (map.removeTile(cursorX, cursorY, editing))
+					{
+						player.getInventory().addItem(tile);
 						
-					oldCursorX = cursorX;
-					oldCursorY = cursorY;
-					
-					oldEditing = editing;
+						// If the action wasnt right mouse button...
+						tilePlaced = false;
+							
+						oldCursorX = cursorX;
+						oldCursorY = cursorY;
+						
+						oldEditing = editing;
+					}
 				}
 			}
-		}
-		else if (Mouse.isButtonDown(Mouse.RIGHT_MOUSE_BUTTON))
-		{
-			int cursorX = cursor.getX();
-			int cursorY = cursor.getY();
-			
-			if ((cursorX != oldCursorX || cursorY != oldCursorY) || !tilePlaced || editing != oldEditing)
+			else if (Mouse.isButtonDown(Mouse.RIGHT_MOUSE_BUTTON))
 			{
-				Item item = player.getQuickBar().getSelectedItem();
+				int cursorX = cursor.getX();
+				int cursorY = cursor.getY();
 				
-				if (item instanceof Tile)
+				if ((cursorX != oldCursorX || cursorY != oldCursorY) || !tilePlaced || editing != oldEditing)
 				{
-					Tile    tile     = (Tile)item;
+					Item item = player.getQuickBar().getSelectedItem();
 					
-					int     ts       = Tile.getTileSize();
-					
-					boolean canPlace = editing != Chunk.MIDDLEGROUND || (!tile.isCollidable() ||
-							!Intersects.rectangles(cursorX * ts, cursorY * ts, tile.getCols() * ts, tile.getRows() * ts,
-									player.getX() + 1, player.getY(), player.getWidth() - 2, player.getHeight() - 3));
-					
-					if (canPlace)
+					if (item instanceof Tile)
 					{
-						if (map.addTile(tile, cursorX, cursorY, editing, false))
+						Tile    tile     = (Tile)item;
+						
+						int     ts       = Tile.getTileSize();
+						
+						boolean canPlace = editing != Chunk.MIDDLEGROUND || (!tile.isCollidable() ||
+								!Intersects.rectangles(cursorX * ts, cursorY * ts, tile.getCols() * ts, tile.getRows() * ts,
+										player.getX() + 1, player.getY(), player.getWidth() - 2, player.getHeight() - 3));
+						
+						if (canPlace)
 						{
-							player.getInventory().removeItem(tile);
-							
-							// If the action was right mouse button...
-							tilePlaced = true;
-					
-							oldCursorX = cursorX;
-							oldCursorY = cursorY;
-							
-							oldEditing = editing;
+							if (map.addTile(tile, cursorX, cursorY, editing, false))
+							{
+								player.getInventory().removeItem(player.getQuickBar().getSelectedIndex());
+								
+								// If the action was right mouse button...
+								tilePlaced = true;
+						
+								oldCursorX = cursorX;
+								oldCursorY = cursorY;
+								
+								oldEditing = editing;
+							}
 						}
 					}
 				}
 			}
-		}
-		
-		if (!chatBox.isOpen())
-		{
-			if (Keyboard.isKeyDown(Keyboard.KEY_A))
-			{
-				player.moveLeft(delta);
-			}
-			else if (Keyboard.isKeyDown(Keyboard.KEY_D))
-			{
-				player.moveRight(delta);
-			}
-	
-			if (Keyboard.isKeyDown(Keyboard.KEY_SPACE) || Keyboard.isKeyDown(Keyboard.KEY_W))
-			{
-				player.setClimbing(true);
-				player.jump();
-			}
-			else
-			{
-				player.setClimbing(false);
-			}
 			
-			if (Keyboard.isKeyDown(Keyboard.KEY_LEFT_SHIFT))
+			if (!chatBox.isOpen())
 			{
-				player.setSprinting(true);
+				if (Keyboard.isKeyDown(Keyboard.KEY_A))
+				{
+					player.moveLeft(delta);
+				}
+				else if (Keyboard.isKeyDown(Keyboard.KEY_D))
+				{
+					player.moveRight(delta);
+				}
+		
+				if (Keyboard.isKeyDown(Keyboard.KEY_SPACE) || Keyboard.isKeyDown(Keyboard.KEY_W))
+				{
+					player.setClimbing(true);
+					player.jump();
+				}
+				else
+				{
+					player.setClimbing(false);
+				}
+				
+				if (Keyboard.isKeyDown(Keyboard.KEY_LEFT_SHIFT))
+				{
+					player.setSprinting(true);
+				}
+				else
+				{
+					player.setSprinting(false);
+				}
 			}
 			else
 			{
 				player.setSprinting(false);
 			}
-		}
-		else
-		{
-			player.setSprinting(false);
 		}
 		
 		if (Mouse.getDWheel() != 0)
