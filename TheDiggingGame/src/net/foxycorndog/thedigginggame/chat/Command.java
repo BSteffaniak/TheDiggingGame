@@ -130,6 +130,20 @@ public class Command
 				}
 			}
 			
+			index = 0;
+			
+			if (split[index++].equals("java"))
+			{
+				String java = command.substring(command.indexOf("java ") + 5);
+				
+				while (java.startsWith(" "))
+				{
+					java = java.substring(1);
+				}
+				
+				return "Java reflection is not implemented yet...";
+			}
+			
 			response = "Unknown command.";
 		}
 		catch (IndexOutOfBoundsException e)
