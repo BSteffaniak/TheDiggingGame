@@ -21,6 +21,8 @@ public class TerrainMap
 	
 	private			final	int		WIDTH, HEIGHT;
 	
+	private	static	final	float	PI = 3.14159f;
+	
 	private	static	final	Random	random	= NoiseMap.random;
 	
 	public	static	final	int		PLAINS	= 1, DESERT = 2;
@@ -85,6 +87,8 @@ public class TerrainMap
 			}
 		}
 		
+		chunk.calculateTiles();
+		
 		if (chunk.isSurface())
 		{
 			for (int x = 0; x < WIDTH; x++)
@@ -110,12 +114,12 @@ public class TerrainMap
 						chunk.addTile(tile, x, y, Chunk.MIDDLEGROUND, true);
 //						chunk.addTile(tile, x, y, Chunk.FOREGROUND, true);
 					}
-					else
-					{
-						chunk.removeTile(x, y, Chunk.BACKGROUND);
-						chunk.removeTile(x, y, Chunk.MIDDLEGROUND);
-						chunk.removeTile(x, y, Chunk.FOREGROUND);
-					}
+//					else
+//					{
+//						chunk.removeTile(x, y, Chunk.BACKGROUND);
+//						chunk.removeTile(x, y, Chunk.MIDDLEGROUND);
+//						chunk.removeTile(x, y, Chunk.FOREGROUND);
+//					}
 				}
 			}
 		}
@@ -123,6 +127,8 @@ public class TerrainMap
 		chunk.calculateTiles();
 		
 		addVeins(chunk);
+		
+		chunk.calculateTiles();
 	}
 	
 	private void addVeins(Chunk chunk)
@@ -131,11 +137,16 @@ public class TerrainMap
 		{
 			for (int x = 0; x < WIDTH; x++)
 			{
-				if (random.nextInt(50) == 0)
+				if (random.nextInt(30) == 0)
 				{
-					Tile rand = Tile.getTile("Dirt");
+					Tile tile = Tile.getRandomTile();
 					
-					addVein(x, y, rand, chunk);
+					while (!tile.isVein())
+					{
+						tile = Tile.getRandomTile();
+					}
+					
+					addVein(x, y, tile, chunk);
 				}
 			}
 		}
@@ -143,8 +154,24 @@ public class TerrainMap
 	
 	private void addVein(int x, int y, Tile tile, Chunk chunk)
 	{
-		int size = random.nextInt(4);
+		int min = (int)Math.round(Math.sqrt(tile.getMinVein() / PI) * 2 / 2);
+		int max = (int)Math.round(Math.sqrt(tile.getMaxVein() / PI) * 2 / 2);
 		
+		int xOff = random.nextInt(max);
+		int yOff = random.nextInt(max);
+		int size = random.nextInt(max - min) + min;
+		
+		fillCircle(x + xOff, y + yOff, size, tile, chunk);
+		
+		xOff = random.nextInt(max);
+		yOff = random.nextInt(max);
+		size = random.nextInt(max - min) + min;
+		
+		fillCircle(x + xOff, y + yOff, size, tile, chunk);
+	}
+	
+	private void fillCircle(int x, int y, int size, Tile tile, Chunk chunk)
+	{
 		float halfSize = size / 2f;
 		
 		for (int y2 = 0; y2 < size; y2++)
@@ -154,11 +181,12 @@ public class TerrainMap
 				int x3 = Math.round(x + x2 - halfSize);
 				int y3 = Math.round(y + y2 - halfSize);
 				
-				if (distance(x, y, x3, y3) <= size)
+				if (distance(x, y, x3, y3) <= halfSize)
 				{
 					if (chunk.getTile(x3, y3, Chunk.MIDDLEGROUND) != null)
 					{
 						chunk.addTile(tile, x3, y3, Chunk.MIDDLEGROUND, true);
+						chunk.addTile(tile, x3, y3, Chunk.BACKGROUND, true);
 					}
 				}
 			}

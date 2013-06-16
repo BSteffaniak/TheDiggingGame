@@ -105,7 +105,7 @@ public class Map
 		
 		chunkQueue = new Queue<Chunk>();
 		
-		generatorThread = new Thread("Dynamic Terrain Generator")
+		generatorThread = new Thread("TerraGen Thread")
 		{
 			public void run()
 			{
@@ -248,7 +248,7 @@ public class Map
 			
 			chunk.setTiles(tiles);
 			
-			chunk.update();
+//			chunk.update();
 //			chunk.calculateLighting();
 //			chunk.updateLighting();
 			
@@ -258,6 +258,8 @@ public class Map
 			}
 			
 			chunks.get(rx).put(ry, chunk);
+			
+			chunkQueue.enqueue(chunk);
 			
 			return true;
 		}
@@ -286,10 +288,14 @@ public class Map
 			
 			chunks.get(rx).put(ry, chunk);
 			
-			Chunk left  = getChunk(rx - 1, ry);
-			Chunk right = getChunk(rx + 1, ry);
+//			chunk.update();
 			
-			chunk.generate(left, right);
+//			Chunk left  = getChunk(rx - 1, ry);
+//			Chunk right = getChunk(rx + 1, ry);
+			
+//			chunk.generate(left, right);
+			
+			chunkQueue.enqueue(chunk);
 			
 			return true;
 		}
@@ -326,7 +332,9 @@ public class Map
 			Chunk left  = getChunk(rx - 1, ry);
 			Chunk right = getChunk(rx + 1, ry);
 			
-			chunk.generate(left, right);
+//			chunk.generate(left, right);
+			
+			chunkQueue.enqueue(chunk);
 			
 			return true;
 		}
@@ -389,6 +397,8 @@ public class Map
 					{
 						chunks.put(rx, new HashMap<Integer, Chunk>());
 					}
+					
+					chunk.update();
 					
 					chunkQueue.enqueue(chunk);
 				

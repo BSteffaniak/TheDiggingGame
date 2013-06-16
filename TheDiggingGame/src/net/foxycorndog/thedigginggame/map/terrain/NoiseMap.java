@@ -28,8 +28,6 @@ public class NoiseMap
 	{
 		this.WIDTH  = width;
 		this.HEIGHT = height;
-
-		value    = 10;
 		
 		long seed   = System.nanoTime();
 		setSeed(seed);

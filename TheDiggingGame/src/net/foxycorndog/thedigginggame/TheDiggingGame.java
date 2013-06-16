@@ -188,10 +188,15 @@ public class TheDiggingGame
 		map = new Map(this);
 
 //		map.load("world");
-		map.generateChunk(0, 0);
+		map.generateChunk(0, 0, new Thread()
+		{
+			public void run()
+			{
+				player.teleport(0, 0);
+			}
+		});
 
 		player = new Player(map);
-		player.teleport(0, 0);
 		player.setFocused(true);
 		player.getInventory().setEnabled(false);
 		player.setName("Player");

@@ -36,6 +36,7 @@ public class Chunk
 {
 	private					boolean				lightingUpdated, tilesUpdated;
 	private					boolean				generated, generating;
+	private					boolean				initialized;
 	
 	private					int					relativeX, relativeY;
 	private					int					level;
@@ -58,6 +59,7 @@ public class Chunk
 	private					ArrayList<Thread>	generateHooks;
 	
 	private					Queue<NewTile>		tilesQueue;
+	
 	private					Queue<Integer>		lightingQueue;
 	
 	private	static			Texture				black;
@@ -233,48 +235,6 @@ public class Chunk
 		this.lights      = new float[3 * 2 * LAYER_COUNT * 4];
 		this.outputLight = new float[3 * 2 * LAYER_COUNT * 4];
 		
-		texturesBuffer   = new Buffer(2 * CHUNK_VERT_COUNT);
-		
-//		float data[] = new float[colorsBuffer.getSize()];
-		
-//		for (int i = 0; i < colors.length; i += 4)
-//		{
-//			colors[i + 0] = 1;
-//			colors[i + 1] = 1;
-//			colors[i + 2] = 1;
-//			colors[i + 3] = 0;
-//		}
-		
-//		colorsBuffer.beginEditing();
-//		{
-//			colorsBuffer.setData(0, data);
-//		}
-//		colorsBuffer.endEditing();
-		
-		chunkBundle = new Bundle(verticesBuffer, texturesBuffer, null, VERTEX_SIZE);
-		
-		lightingBundle = new Bundle(CHUNK_SIZE * CHUNK_SIZE * 3 * 2, 2, true, true);
-		
-		lightingBundle.beginEditingTextures();
-		{
-			for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
-			{
-				lightingBundle.addTextures(GL.genRectTextures(black.getImageOffsets()));
-			}
-		}
-		lightingBundle.endEditingTextures();
-		
-		lightingBundle.beginEditingVertices();
-		{
-			int ts = Tile.getTileSize();
-			
-			for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
-			{
-				lightingBundle.addVertices(GL.genRectVerts(i % CHUNK_SIZE * ts, i / CHUNK_SIZE * ts, ts, ts));
-			}
-		}
-		lightingBundle.endEditingVertices();
-		
 		tiles           = new Tile[CHUNK_SIZE * CHUNK_SIZE * 3];
 		tilesQueue      = new Queue<NewTile>();
 		
@@ -283,9 +243,7 @@ public class Chunk
 		
 		generateHooks   = new ArrayList<Thread>();
 		
-		lightingUpdated = false;
-		
-		updateLighting();
+		initialized      = false;
 	}
 	
 	/**
@@ -437,7 +395,7 @@ public class Chunk
 			}
 			else if (!map.getChunk(rx, ry).isGenerated())
 			{
-				map.getChunk(rx, ry).generate(map.getChunk(rx - 1, ry), map.getChunk(rx + 1, ry));
+				map.generateChunk(rx, ry);
 			}
 			
 			return map.getChunk(rx, ry).addTile(tile, x, y, layer, replace);
@@ -450,7 +408,9 @@ public class Chunk
 			return false;
 		}
 		
-		boolean added = tilesQueue.enqueue(new NewTile(tile, x, y, layer));
+		NewTile newTile = new NewTile(tile, x, y, layer);
+		
+		boolean added   = tilesQueue.enqueue(newTile);
 		
 		lightingQueue.enqueue(x);
 		
@@ -502,6 +462,26 @@ public class Chunk
 	 */
 	public Tile getTile(int x, int y, int layer)
 	{
+		if (x < 0 || y < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE)
+		{
+			Bounds bounds = map.trimLocation(x, y, relativeX, relativeY);
+			
+			int rx = 0;
+			int ry = 0;
+			
+			x  = bounds.getX();
+			y  = bounds.getY();
+			rx = bounds.getWidth();
+			ry = bounds.getHeight();
+			
+			if (!map.isChunkAt(rx, ry))
+			{
+				return null;
+			}
+			
+			return map.getChunk(rx, ry).getTile(x, y, layer);
+		}
+		
 		int index = layer * LAYER_COUNT + x + y * CHUNK_SIZE;
 		
 		if (index < 0 || index >= tiles.length)
@@ -1052,7 +1032,7 @@ public class Chunk
 		
 		int size = tilesQueue.size();
 		
-		for (int i = size - 1; i >= 0; i--)
+		for (int i = 0; i < size; i++)
 		{
 			NewTile newTile = tilesQueue.peek(i);
 			
@@ -1145,6 +1125,55 @@ public class Chunk
 	 */
 	public void update()
 	{
+		if (!initialized)
+		{
+			initialized    = true;
+			
+			texturesBuffer = new Buffer(2 * CHUNK_VERT_COUNT);
+			
+//			float data[] = new float[colorsBuffer.getSize()];
+			
+//			for (int i = 0; i < colors.length; i += 4)
+//			{
+//				colors[i + 0] = 1;
+//				colors[i + 1] = 1;
+//				colors[i + 2] = 1;
+//				colors[i + 3] = 0;
+//			}
+			
+//			colorsBuffer.beginEditing();
+//			{
+//				colorsBuffer.setData(0, data);
+//			}
+//			colorsBuffer.endEditing();
+			
+			chunkBundle = new Bundle(verticesBuffer, texturesBuffer, null, VERTEX_SIZE);
+			
+			lightingBundle = new Bundle(CHUNK_SIZE * CHUNK_SIZE * 3 * 2, 2, true, true);
+			
+			lightingBundle.beginEditingTextures();
+			{
+				for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+				{
+					lightingBundle.addTextures(GL.genRectTextures(black.getImageOffsets()));
+				}
+			}
+			lightingBundle.endEditingTextures();
+			
+			lightingBundle.beginEditingVertices();
+			{
+				int ts = Tile.getTileSize();
+				
+				for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+				{
+					lightingBundle.addVertices(GL.genRectVerts(i % CHUNK_SIZE * ts, i / CHUNK_SIZE * ts, ts, ts));
+				}
+			}
+			lightingBundle.endEditingVertices();
+			
+			lightingUpdated = false;
+		}
+		
 		calculateTiles();
 		updateTiles();
 		calculateLighting();
@@ -1156,6 +1185,11 @@ public class Chunk
 	 */
 	public void render()
 	{
+		if (!initialized)
+		{
+			return;
+		}
+		
 		GL.pushMatrix();
 		{
 			GL.translate(relativeX * CHUNK_SIZE * Tile.getTileSize(), relativeY * CHUNK_SIZE * Tile.getTileSize(), 0);
@@ -1172,6 +1206,11 @@ public class Chunk
 	 */
 	public void renderLighting()
 	{
+		if (!initialized)
+		{
+			return;
+		}
+		
 		GL.pushMatrix();
 		{
 			GL.translate(relativeX * CHUNK_SIZE * Tile.getTileSize(), relativeY * CHUNK_SIZE * Tile.getTileSize(), 0);
