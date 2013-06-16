@@ -89,6 +89,8 @@ public class MainMenu extends Menu
 		
 		splash = splashes[(int)(Math.random() * splashes.length)];
 		
+		final float strobeSpeed = 0.01f;
+		
 		new Thread()
 		{
 			public void run()
@@ -97,18 +99,18 @@ public class MainMenu extends Menu
 				{
 					if (splashScaleIncreasing)
 					{
-						splashScale *= 1.005f;
+						splashScale *= 1 + strobeSpeed;
 						
-						if (splashScale >= 1.1f)
+						if (splashScale >= 1.13f)
 						{
 							splashScaleIncreasing = false;
 						}
 					}
 					else
 					{
-						splashScale *= 0.995f;
+						splashScale *= 1 - strobeSpeed;
 						
-						if (splashScale <= 0.95f)
+						if (splashScale <= 0.97f)
 						{
 							splashScaleIncreasing = true;
 						}
@@ -132,9 +134,11 @@ public class MainMenu extends Menu
 		
 		try
 		{
-			normalImage = ImageIO.read(new File("res/images/GUI/button.png"));
-			hoverImage  = ImageIO.read(new File("res/images/GUI/buttonhover.png"));
-			background = ImageIO.read(new File("res/images/background.png"));
+			String res = Launcher.getResourcesLocation();
+			
+			normalImage = ImageIO.read(new File(res + "res/images/GUI/button.png"));
+			hoverImage  = ImageIO.read(new File(res + "res/images/GUI/buttonhover.png"));
+			background = ImageIO.read(new File(res + "res/images/background.png"));
 		}
 		catch (IOException e)
 		{

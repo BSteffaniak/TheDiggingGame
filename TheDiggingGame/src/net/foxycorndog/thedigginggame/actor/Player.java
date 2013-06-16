@@ -196,6 +196,21 @@ public class Player extends Actor
 		setBundle(bundle);
 	}
 	
+	public float getX()
+	{
+		return super.getX() + 1;
+	}
+	
+	public int getWidth()
+	{
+		return super.getWidth() - 2;
+	}
+	
+	public int getHeight()
+	{
+		return super.getHeight() - 3;
+	}
+	
 	/**
 	 * Render the Player to the scene.
 	 * 

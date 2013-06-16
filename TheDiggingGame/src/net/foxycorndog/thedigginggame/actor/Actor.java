@@ -1,9 +1,12 @@
 package net.foxycorndog.thedigginggame.actor;
 
+import java.util.ArrayList;
+
 import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
+import net.foxycorndog.jfoxylib.util.Bounds;
 import net.foxycorndog.thedigginggame.item.Inventory;
 import net.foxycorndog.thedigginggame.item.tile.Tile;
 import net.foxycorndog.thedigginggame.map.Chunk;
@@ -28,6 +31,7 @@ public class Actor
 	private	boolean			sprinting;
 	private	boolean			focused;
 	
+	private	int				id;
 	private	int				width, height;
 	private	int				facing, oldFacing;
 	
@@ -36,6 +40,8 @@ public class Actor
 	private	float			jumpHeight, startY;
 	private	float			speed;
 	private	float			rotation;
+	
+	private	String			name;
 	
 	private	Inventory		inventory;
 	
@@ -47,7 +53,11 @@ public class Actor
 	
 	private	float			color[];
 	
-	public	static final int	LEFT = 0, FORWARD = 1, RIGHT = 2, BACKWARD = 3;
+	private	Tile			adjacentTiles[];
+	
+	private	static	int		ids;
+	
+	public	static	final	int	LEFT = 0, FORWARD = 1, RIGHT = 2, BACKWARD = 3;
 	
 	/**
 	 * Creates an actor with the specified characteristics.
@@ -78,6 +88,43 @@ public class Actor
 		
 		inventory        = new Inventory(9, 3, Inventory.CHEST_INVENTORY_IMAGE);
 		inventory.loadVertices(guiScale, 16 / guiScale, 16 / guiScale, 16 / guiScale, new float[3]);
+		
+		adjacentTiles    = new Tile[0];
+		
+		this.id          = ++ids;
+		
+		setName("Actor " + id);
+	}
+	
+	/**
+	 * Get the ID number of the Actor.
+	 * 
+	 * @return The ID number of the Actor.
+	 */
+	public int getID()
+	{
+		return id;
+	}
+	
+	/**
+	 * Get the name of the Actor. The default name is
+	 * "Actor [id]"
+	 * 
+	 * @return The name of the Actor.
+	 */
+	public String getName()
+	{
+		return name;
+	}
+	
+	/**
+	 * Set the name of the Actor.
+	 * 
+	 * @param name The new name of the Actor.
+	 */
+	public void setName(String name)
+	{
+		this.name = name;
 	}
 	
 	/**
@@ -125,6 +172,64 @@ public class Actor
 		float scale = map.getGame().getMapScale();
 		
 		map.setLocation(-x + ((Frame.getWidth() / 2) / scale) - width / 2, -y + ((Frame.getHeight() / 2) / scale) - height / 2);
+	}
+	
+	/**
+	 * Teleport the Actor to the specific location of (x, y) in
+	 * the Map that the Actor belongs to.
+	 * 
+	 * @param x The horizontal location to teleport the Actor to on a
+	 * 		per-Tile basis.
+	 * @param y The vertical location to teleport the Actor to on a
+	 * 		per-Tile basis.
+	 * @return
+	 */
+	public boolean teleport(int x, int y)
+	{
+		setLocation(x * Tile.getTileSize(), y * Tile.getTileSize());
+		
+		Bounds bounds = map.trimLocation(x, y, 0, 0);
+		
+		int rx = 0;
+		int ry = 0;
+		
+		x  = bounds.getX();
+		y  = bounds.getY();
+		rx = bounds.getWidth();
+		ry = bounds.getHeight();
+		
+		if (!map.isChunkAt(rx, ry))
+		{
+			map.generateChunk(rx, ry);
+		}
+		
+		while (map.isCollision(this))
+		{
+			setLocation(this.x, this.y + Tile.getTileSize());
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Get an array of the Tiles that the Actor touches.
+	 * 
+	 * @return An array of the Tiles that the Actor touches.
+	 */
+	public Tile[] getAdjacentTiles()
+	{
+		return adjacentTiles;
+	}
+	
+	/**
+	 * Set the array of the Tiles that describes which the Actor touches.
+	 * 
+	 * @param adjacentTiles The array of the Tiles that describes which
+	 * 		the Actor touches.
+	 */
+	public void setAdjacentTiles(Tile adjacentTiles[])
+	{
+		this.adjacentTiles = adjacentTiles;
 	}
 	
 	/**

@@ -105,7 +105,7 @@ public class Map
 		
 		chunkQueue = new Queue<Chunk>();
 		
-		generatorThread = new Thread()
+		generatorThread = new Thread("Dynamic Terrain Generator")
 		{
 			public void run()
 			{
@@ -129,7 +129,12 @@ public class Map
 					
 					for (int i = chunkQueue.size() - 1; i >= 0; i--)
 					{
-						chunkQueue.peek(i).generate();
+						Chunk chunk = chunkQueue.peek(i);
+						
+						Chunk left  = getChunk(chunk.getRelativeX() - 1, chunk.getRelativeY());
+						Chunk right = getChunk(chunk.getRelativeX() + 1, chunk.getRelativeY());
+						
+						chunk.generate(left, right);
 					}
 					
 					while (!chunkQueue.isEmpty())
@@ -281,7 +286,10 @@ public class Map
 			
 			chunks.get(rx).put(ry, chunk);
 			
-			chunk.generate();
+			Chunk left  = getChunk(rx - 1, ry);
+			Chunk right = getChunk(rx + 1, ry);
+			
+			chunk.generate(left, right);
 			
 			return true;
 		}
@@ -315,7 +323,10 @@ public class Map
 			
 			chunk.addGenerateHook(hook);
 			
-			chunk.generate();
+			Chunk left  = getChunk(rx - 1, ry);
+			Chunk right = getChunk(rx + 1, ry);
+			
+			chunk.generate(left, right);
 			
 			return true;
 		}
@@ -345,7 +356,7 @@ public class Map
 		int startX = -chunkWidth  - width  / 2;
 		int startY = -chunkHeight - height / 2;
 		
-		int x = startX;
+		int x = 0;
 		int y = startY;
 		
 		while (y <= height)
@@ -584,17 +595,17 @@ public class Map
 		
 		Tile   tile        = null;
 		
-		int    ts          = Tile.getTileSize();
+		float  ts          = Tile.getTileSize();
 		
-		float  actorX      = actor.getX() + 1;
+		float  actorX      = actor.getX();
 		float  actorY      = actor.getY();
-		int    actorWidth  = actor.getWidth() - 2;
-		int    actorHeight = actor.getHeight() - 3;
+		int    actorWidth  = actor.getWidth();
+		int    actorHeight = actor.getHeight();
 		
-		int    xt          = (int)Math.round(actorX / ts);
-		int    yt          = (int)Math.floor(actorY / ts);
-		float  wt          = actorWidth  / (float)ts;
-		float  ht          = actorHeight / (float)ts;
+		float  xt          = actorX / ts;
+		float  yt          = actorY / ts;
+		float  wt          = actorWidth  / ts;
+		float  ht          = actorHeight / ts;
 		
 //		if (actorX < 0)
 //		{
@@ -602,17 +613,20 @@ public class Map
 //		}
 		if (actorY < 0)
 		{
-			yt++;
+//			yt++;
 		}
 		
-		int signX = xt < 0 ? -1 : 1;
-		int signY = yt < 0 ? -1 : 1;
+//		int signX = xt < 0 ? -1 : 1;
+//		int signY = yt < 0 ? -1 : 1;
 		
-		for (int y = 0; y < ht; y++)
+		for (float y = yt; y < yt + ht + 1; y++)
 		{
-			for (int x = 0; x < wt; x++)
+			for (float x = xt; x < xt + wt + 1; x++)
 			{
-				tile = getTile(xt + x * signX, yt + y * signY, layer);
+				x    = Math.min(x, xt + wt);
+				y    = Math.min(y, yt + ht);
+				
+				tile = getTile((int)Math.floor(x), (int)Math.floor(y), layer);
 				
 				if (tile != null)
 				{
@@ -971,20 +985,33 @@ public class Map
 	 */
 	public boolean isCollision(final Actor actor)
 	{
-		collision = false;
+//		collision = false;
+//		
+//		iterateVisibleChunks(new ChunkTask()
+//		{
+//			public void run(Chunk chunk)
+//			{
+//				if (chunk.isCollision(actor))
+//				{
+//					collision = true;
+//				}
+//			}
+//		});
 		
-		iterateVisibleChunks(new ChunkTask()
+//		if (true)return true;
+		
+		Tile tiles[] = getAdjacentTiles(actor, Chunk.MIDDLEGROUND);
+		
+		for (Tile tile : tiles)
 		{
-			public void run(Chunk chunk)
+			if (tile.isCollidable())
 			{
-				if (chunk.isCollision(actor))
-				{
-					collision = true;
-				}
+				return true;
 			}
-		});
+		}
 		
-		return collision;
+		return false;
+//		return collision;
 	}
 	
 	/**

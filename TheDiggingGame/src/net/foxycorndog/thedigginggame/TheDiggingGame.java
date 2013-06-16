@@ -75,7 +75,7 @@ public class TheDiggingGame
 	
 	private	static			Font			font;
 	
-	public	static	final	String			VERSION	= "0.1";
+	public	static	final	String			VERSION	= "0.4";
 	
 	/**
 	 * Main method for the game. First method ran.
@@ -191,9 +191,10 @@ public class TheDiggingGame
 		map.generateChunk(0, 0);
 
 		player = new Player(map);
-		player.setLocation(16 * 6, 16 * 13);
+		player.teleport(0, 0);
 		player.setFocused(true);
 		player.getInventory().setEnabled(false);
+		player.setName("Player");
 
 		map.addActor(player);
 

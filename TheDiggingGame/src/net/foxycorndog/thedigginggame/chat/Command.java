@@ -24,7 +24,7 @@ public class Command
 	 */
 	public static String run(String command, Actor actor)
 	{
-		String response = null;
+		String defaultResponse = "Unknown command.";
 		
 		String split[] = command.toLowerCase().split(" ");
 		
@@ -70,7 +70,7 @@ public class Command
 				
 				actor.getInventory().addItem(tile, quantity);
 
-				return "Giving player " + quantity + " " + tile;
+				return "Giving " + actor.getName() + " " + quantity + " " + tile;
 			}
 			
 			index = 0;
@@ -113,7 +113,7 @@ public class Command
 				
 				actor.getInventory().removeItem(tile, quantity);
 				
-				return "Removing " + quantity + " " + tile + " from player";
+				return "Removing " + quantity + " " + tile + " from " + actor.getName();
 			}
 			
 			index = 0;
@@ -132,6 +132,25 @@ public class Command
 			
 			index = 0;
 			
+			if (split[index].equals("teleport") || split[index].equals("tp"))
+			{
+				index++;
+				
+				int x = Integer.valueOf(split[index++]);
+				int y = Integer.valueOf(split[index++]);
+				
+				if (actor.teleport(x, y))
+				{
+					return "Teleporting " + actor.getName() + " to (" + x + ", " + y + ")";
+				}
+				else
+				{
+					return "Unable to teleport " + actor.getName() + " to (" + x + ", " + y + ")";
+				}
+			}
+			
+			index = 0;
+			
 			if (split[index++].equals("java"))
 			{
 				String java = command.substring(command.indexOf("java ") + 5);
@@ -144,13 +163,11 @@ public class Command
 				return "Java reflection is not implemented yet...";
 			}
 			
-			response = "Unknown command.";
+			return defaultResponse;
 		}
 		catch (IndexOutOfBoundsException e)
 		{
-			response = "Unknown command.";
+			return defaultResponse;
 		}
-		
-		return response;
 	}
 }

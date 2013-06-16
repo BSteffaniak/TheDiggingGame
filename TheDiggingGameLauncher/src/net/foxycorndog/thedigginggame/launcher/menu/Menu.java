@@ -14,6 +14,7 @@ import net.foxycorndog.jfoxylib.components.Panel;
 import net.foxycorndog.jfoxylib.events.FrameEvent;
 import net.foxycorndog.jfoxylib.events.FrameListener;
 import net.foxycorndog.jfoxylib.font.Font;
+import net.foxycorndog.thedigginggame.launcher.Launcher;
 
 /**
  * Class that is used for each Menu that is used.
@@ -35,11 +36,13 @@ public abstract class Menu extends Panel
 	{
 		try
 		{
-			smallButtonImage      = ImageIO.read(new File("res/images/GUI/SmallButton.png"));
-			smallButtonHoverImage = ImageIO.read(new File("res/images/GUI/SmallButtonHover.png"));
-			largeButtonImage      = ImageIO.read(new File("res/images/GUI/Button.png"));
-			largeButtonHoverImage = ImageIO.read(new File("res/images/GUI/ButtonHover.png"));
-			backgroundImage            = ImageIO.read(new File("res/images/background.png"));
+			String res = Launcher.getResourcesLocation();
+			
+			smallButtonImage      = ImageIO.read(new File(res + "res/images/GUI/SmallButton.png"));
+			smallButtonHoverImage = ImageIO.read(new File(res + "res/images/GUI/SmallButtonHover.png"));
+			largeButtonImage      = ImageIO.read(new File(res + "res/images/GUI/Button.png"));
+			largeButtonHoverImage = ImageIO.read(new File(res + "res/images/GUI/ButtonHover.png"));
+			backgroundImage            = ImageIO.read(new File(res + "res/images/background.png"));
 		}
 		catch (IOException e)
 		{

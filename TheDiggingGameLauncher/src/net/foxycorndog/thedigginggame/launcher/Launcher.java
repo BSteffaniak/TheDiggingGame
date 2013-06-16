@@ -66,36 +66,42 @@ public class Launcher extends GameStarter
 
 //	private GameInterface		gameInterface;
 	
-	private	static final String	resourcesLocation = locateResources();
+	private	static	final	boolean	debug = true;
 	
-	public	static final String	VERSION		= "0.1";
-	public	static final String	SERVER_URL	= "http://www.thedigginggame.co.nf/";
+	private	static	final	String	resourcesLocation = locateResources();
 	
-	private static final String locateResources()
+	public	static	final	String	VERSION		= "0.9";
+	public	static	final	String	SERVER_URL	= "http://www.thedigginggame.co.nf/";
+	
+	private static	final	String locateResources()
 	{
-		String resLoc = "../thedigginggame/";
-	
+		String resLoc = "../thedigginggame";
+		
 		try
 		{
-			String classLoc = Launcher.class.getResource("Launcher.class").toString();
-			
-			boolean jar = classLoc.startsWith("jar:") || classLoc.startsWith("rsrc:");
-			
-			if (jar)
+			if (debug)
 			{
-				resLoc = new File(new File(System.getProperty("java.class.path")).getCanonicalPath()).getParentFile().getCanonicalPath();
+				resLoc = new File(resLoc).getCanonicalPath();
 			}
 			else
 			{
-				File f = new File(Launcher.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+				String classLoc = Launcher.class.getResource("Launcher.class").toString();
 				
-				File parent = f.getParentFile();
+				boolean jar = classLoc.startsWith("jar:") || classLoc.startsWith("rsrc:");
 				
-				resLoc = parent.getCanonicalPath();
+				if (jar)
+				{
+					resLoc = new File(new File(System.getProperty("java.class.path")).getCanonicalPath()).getParentFile().getCanonicalPath();
+				}
+				else
+				{
+					File f = new File(Launcher.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+					
+					File parent = f.getParentFile();
+					
+					resLoc = parent.getCanonicalPath();
+				}
 			}
-			
-			resLoc = resLoc.replace("\\", "/");
-			resLoc = FileUtils.removeEndingSlashes(resLoc) + "/";
 		}
 		catch (URISyntaxException e)
 		{
@@ -105,6 +111,9 @@ public class Launcher extends GameStarter
 		{
 			e.printStackTrace();
 		}
+		
+		resLoc = resLoc.replace("\\", "/");
+		resLoc = FileUtils.removeEndingSlashes(resLoc) + "/";
 		
 		return resLoc;
 	}
@@ -171,8 +180,6 @@ public class Launcher extends GameStarter
 			{
 				try
 				{
-					boolean debug    = true;
-					
 					String parentDir = null;
 					String jarName   = null;
 					
@@ -182,7 +189,10 @@ public class Launcher extends GameStarter
 					{
 						jarName   = "";
 						parentDir = "../thedigginggame/bin/";
-	//					parentDir = "../thedigginggame/bin/";
+					}
+					else
+					{
+						
 					}
 					
 					URL urls[] = new URL[]
@@ -371,7 +381,7 @@ public class Launcher extends GameStarter
 		
 		try
 		{
-			font = new Font("res/images/fonts/font.png", 26, 4,
+			font = new Font(resourcesLocation + "res/images/fonts/font.png", 26, 4,
 					new char[]
 					{
 						'A', 'B', 'C', 'D', 'E', 'F',  'G', 'H', 'I', 'J', 'K', 'L',  'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -673,11 +683,12 @@ public class Launcher extends GameStarter
 		
 		System.exit(1);
 	}
-	
+
 	/**
-	 * Get the location in which the resources folder is located.
+	 * Get the location in which the resources for the game are stored.
 	 * 
-	 * @return The location in which the resources folder is located.
+	 * @return The location in which the resources for the game are
+	 * 		stored.
 	 */
 	public static String getResourcesLocation()
 	{

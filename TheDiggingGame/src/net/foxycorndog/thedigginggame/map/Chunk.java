@@ -18,6 +18,8 @@ import net.foxycorndog.jfoxyutil.Queue;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.actor.Actor;
 import net.foxycorndog.thedigginggame.item.tile.Tile;
+import net.foxycorndog.thedigginggame.map.terrain.NoiseMap;
+import net.foxycorndog.thedigginggame.map.terrain.TerrainMap;
 
 /**
  * Class that holds the information for each of the chunks.
@@ -33,9 +35,14 @@ import net.foxycorndog.thedigginggame.item.tile.Tile;
 public class Chunk
 {
 	private					boolean				lightingUpdated, tilesUpdated;
-	private					boolean				generated;
+	private					boolean				generated, generating;
 	
 	private					int					relativeX, relativeY;
+	private					int					level;
+	
+	private					NoiseMap			noiseMap;
+	
+	private					TerrainMap			terrainMap;
 	
 	private					Buffer				texturesBuffer;
 	
@@ -282,6 +289,17 @@ public class Chunk
 	}
 	
 	/**
+	 * Get the NoiseMap instance that holds the values used to generate
+	 * the Terrain levels.
+	 * 
+	 * @return The NoiseMap instance.
+	 */
+	public NoiseMap getNoiseMap()
+	{
+		return noiseMap;
+	}
+	
+	/**
 	 * Get whether the Chunk has been and is finished generating or not.
 	 * 
 	 * @return Whether the Chunk has been and is finished generating or
@@ -293,43 +311,45 @@ public class Chunk
 	}
 	
 	/**
-	 * Method that generates the terrain of the chunk.
+	 * Method that generates the terrain of the chunk if it has not
+	 * been generated yet.
 	 */
-	public void generate()
+	public void generate(Chunk left, Chunk right)
 	{
-		generated = false;
-		
-		if (relativeY <= 0)
+		if (generating || generated)
 		{
-			for (int y = 0; y < CHUNK_SIZE - 21; y++)
-			{
-				for (int x = 0; x < CHUNK_SIZE; x++)
-				{
-					addTile(Tile.getTile("Dirt"), x, y, MIDDLEGROUND, true);
-					addTile(Tile.getTile("Dirt"), x, y, BACKGROUND, true);
-				}
-			}
-			
-			if (relativeY < 0)
-			{
-				for (int y = CHUNK_SIZE - 21; y < CHUNK_SIZE; y++)
-				{
-					for (int x = 0; x < CHUNK_SIZE; x++)
-					{
-						addTile(Tile.getTile("Dirt"), x, y, MIDDLEGROUND, true);
-						addTile(Tile.getTile("Dirt"), x, y, BACKGROUND, true);
-					}
-				}
-			}
-			else
-			{
-				for (int i = 0; i < CHUNK_SIZE; i++)
-				{
-					addTile(Tile.getTile("Grass"), i, CHUNK_SIZE - 21, MIDDLEGROUND, true);
-					addTile(Tile.getTile("Grass"), i, CHUNK_SIZE - 21, BACKGROUND, true);
-				}
-			}
+			return;
 		}
+		
+		generating = true;
+		generated  = false;
+		
+		if (relativeY < 0)
+		{
+			level = -1;
+		}
+		else if (relativeY == 0)
+		{
+			level = 0;
+		}
+		else if (relativeY > 0)
+		{
+			level = 1;
+		}
+		
+		if (isSurface())
+		{
+			noiseMap = new NoiseMap(CHUNK_SIZE, CHUNK_SIZE);
+			
+			NoiseMap l = left  == null ? null : left.noiseMap;
+			NoiseMap r = right == null ? null : right.noiseMap;
+			
+			noiseMap.generate(l, r);
+		}
+		
+		terrainMap = new TerrainMap(CHUNK_SIZE, CHUNK_SIZE, TerrainMap.DESERT);
+		
+		terrainMap.generate(this);
 		
 		calculateTiles();
 		initLighting();
@@ -341,7 +361,8 @@ public class Chunk
 			hook.start();
 		}
 		
-		generated = true;
+		generated  = true;
+		generating = false;
 	}
 	
 	/**
@@ -353,6 +374,36 @@ public class Chunk
 	public void addGenerateHook(Thread hook)
 	{
 		generateHooks.add(hook);
+	}
+	
+	/**
+	 * Get whether the specified Chunk is an air Chunk or not.
+	 * 
+	 * @return Whether the specified Chunk is an air Chunk or not.
+	 */
+	public boolean isAir()
+	{
+		return level == 1;
+	}
+	
+	/**
+	 * Get whether the specified Chunk is a surface Chunk or not.
+	 * 
+	 * @return Whether the specified Chunk is a surface Chunk or not.
+	 */
+	public boolean isSurface()
+	{
+		return level == 0;
+	}
+	
+	/**
+	 * Get whether the specified Chunk is a ground Chunk or not.
+	 * 
+	 * @return Whether the specified Chunk is a ground Chunk or not.
+	 */
+	public boolean isGround()
+	{
+		return level == -1;
 	}
 	
 	/**
@@ -368,6 +419,30 @@ public class Chunk
 	 */
 	public boolean addTile(Tile tile, int x, int y, int layer, boolean replace)
 	{
+		if (x < 0 || y < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE)
+		{
+			Bounds bounds = map.trimLocation(x, y, relativeX, relativeY);
+			
+			int rx = 0;
+			int ry = 0;
+			
+			x  = bounds.getX();
+			y  = bounds.getY();
+			rx = bounds.getWidth();
+			ry = bounds.getHeight();
+			
+			if (!map.isChunkAt(rx, ry))
+			{
+				map.generateChunk(rx, ry);
+			}
+			else if (!map.getChunk(rx, ry).isGenerated())
+			{
+				map.getChunk(rx, ry).generate(map.getChunk(rx - 1, ry), map.getChunk(rx + 1, ry));
+			}
+			
+			return map.getChunk(rx, ry).addTile(tile, x, y, layer, replace);
+		}
+		
 		Tile oldTile = tiles[layer * LAYER_COUNT + (x + y * CHUNK_SIZE)];
 		
 		if ((!replace && oldTile != null) || (tile == oldTile))

@@ -1,5 +1,7 @@
 package net.foxycorndog.thedigginggame.map.terrain;
 
+import java.util.Random;
+
 /**
  * 
  * 
@@ -11,21 +13,28 @@ package net.foxycorndog.thedigginggame.map.terrain;
  */
 public class NoiseMap
 {
-	private int		width, height;
+	private	int		value;
 	private	int		momentum;
 
-	private	Random	random;
-
 	private	int		values[];
+	
+	private			final	int		WIDTH, HEIGHT;
+	
+	private	static	final	boolean	trim	= true;
+
+	public	static	final	Random	random	= new Random();
 
 	public NoiseMap(int width, int height)
 	{
-		this.width  = width;
-		this.height = height;
+		this.WIDTH  = width;
+		this.HEIGHT = height;
 
-		momentum    = 0;
-
-		random      = new Random();
+		value    = 10;
+		
+		long seed   = System.nanoTime();
+		setSeed(seed);
+		
+		values      = new int[width];
 	}
 
 	/**
@@ -33,7 +42,7 @@ public class NoiseMap
 	 * 
 	 * @param seed The seed to use to generate random numbers.
 	 */
-	public void setSeed(long seed)
+	public static final void setSeed(long seed)
 	{
 		random.setSeed(seed);
 	}
@@ -45,8 +54,6 @@ public class NoiseMap
 
 	public void generate(NoiseMap left, NoiseMap right)
 	{
-		NoiseMap prev  = null;
-
 		int      index = 0;
 
 		int      lh    = 0;
@@ -54,63 +61,94 @@ public class NoiseMap
 
 		if (left != null)
 		{
-			prev  = left;
-
-			index = 0;
-			lh    = left.values[left.width - 1];
+			index    = 0;
+			lh       = left.values[left.WIDTH - 1];
+			value = lh;
 		}
 		else if (right != null)
 		{
-			prev  = right;
-
-			index = width - 1;
-			rh    = right.values[0];
-		}
-
-		if (prev != null)
-		{
-			momentum = prev.momentum;
+			index    = WIDTH + 1;
+			value = right.values[0];
 		}
 		else
 		{
-			momentum = random.nextInt(height);
+			value = random.nextInt(HEIGHT);
+		}
+		
+		if (right != null)
+		{
+			rh = right.values[0];
 		}
 
-		boolean finished = false;
-
-		while (!finished)
+		while (true)
 		{
-			values[index] = momentum;
-
 			if (left != null)
 			{
 				index++;
-
+				
+				if (index > values.length)
+				{
+					break;
+				}
+				
 				if (right != null)
 				{
-					int   sign  = rh > momentum ? 1 : (rh == momentum ? 0 : -1);
-
-					float slope = (ri - momentum - sign) / (width - index);
-
-					if (slope <= 1)
+					int   sign  = rh > value ? 1 : (rh == value ? 0 : -1);
+	
+					float slope = (float)(rh - value) / (WIDTH - index - 1);
+	
+					if (Math.abs(slope) <= 1)
 					{
-						momentum += random.nextInt(3) - 1;
+						value += random.nextInt(3) - 1;
 					}
 					else
 					{
-						momentum += sign;
+						value += sign;
 					}
 				}
 			}
 			else if (right != null)
 			{
 				index--;
+				
+				if (index < 1)
+				{
+					break;
+				}
 			}
 
 			if (left == null || right == null)
 			{
-				momentum += random.nextInt(3) - 1;
+				if (left == null && right == null)
+				{
+					index++;
+
+					if (index > values.length)
+					{
+						break;
+					}
+				}
+				
+				value += random.nextInt(3) - 1;
 			}
+			
+			if (trim)
+			{
+				value = value < 0 ? 0 : value;
+				value = value > HEIGHT - 1 ? HEIGHT - 1 : value;
+			}
+			
+			values[index - 1] = value;
 		}
+	}
+	
+	/**
+	 * Get the Integer array that holds all of the values.
+	 * 
+	 * @return The Integer array that holds all of the values.
+	 */
+	public int[] getValues()
+	{
+		return values;
 	}
 }
