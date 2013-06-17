@@ -53,7 +53,6 @@ public class TheDiggingGame
 {
 	private					boolean			online;
 	private					boolean			tilePlaced;
-	private					boolean			inventoryOpen;
 	
 	private					int				fps;
 	private					int				editing;
@@ -300,9 +299,7 @@ public class TheDiggingGame
 						}
 						else if (code == Keyboard.KEY_TAB)
 						{
-							inventoryOpen = !inventoryOpen;
-							
-							player.getInventory().setEnabled(inventoryOpen);
+							player.getInventory().toggleOpen();
 						}
 						else if (code == Keyboard.KEY_SLASH)
 						{
@@ -349,18 +346,14 @@ public class TheDiggingGame
 			GL.scale(mapScale, mapScale, 1);
 			map.render();
 			
-			if (inventoryOpen)
-			{
-				
-			}
-			else
+			if (!player.getInventory().isOpen())
 			{
 				renderCursor();
 			}
 		}
 		GL.popMatrix();
 		
-		if (inventoryOpen)
+		if (player.getInventory().isOpen())
 		{
 			float x = Frame.getWidth()  / 2 - player.getInventory().getBackgroundImage().getWidth()  / 2;
 			float y = Frame.getHeight() / 2 - player.getInventory().getBackgroundImage().getHeight() / 2;
@@ -373,7 +366,7 @@ public class TheDiggingGame
 			}
 			GL.popMatrix();
 		}
-		if (!inventoryOpen)
+		else
 		{
 			player.getQuickBar().render();
 		}
@@ -411,11 +404,7 @@ public class TheDiggingGame
 		
 		float delta = 60f / (fps == 0 ? target : fps);
 		
-		if (inventoryOpen)
-		{
-			
-		}
-		else
+		if (!player.getInventory().isOpen())
 		{
 			if (Mouse.isButtonDown(Mouse.LEFT_MOUSE_BUTTON))
 			{

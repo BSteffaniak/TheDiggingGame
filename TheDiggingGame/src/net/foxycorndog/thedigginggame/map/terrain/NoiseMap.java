@@ -3,7 +3,8 @@ package net.foxycorndog.thedigginggame.map.terrain;
 import java.util.Random;
 
 /**
- * 
+ * Class used to generate the values needed to determine the height
+ * of a Chunk's generated terrain.
  * 
  * @author	Braden Steffaniak
  * @since	Jun 9, 2013 at 6:30:41 PM
@@ -23,7 +24,15 @@ public class NoiseMap
 	private	static	final	boolean	trim	= true;
 
 	public	static	final	Random	random	= new Random();
-
+	
+	/**
+	 * Create a NoiseMap instance to create values between the specified
+	 * width and height values given.
+	 * 
+	 * @param width The width of Map to generate values for (How many
+	 * 		values will be generated in the end)
+	 * @param height The maximum height that the values can reach.
+	 */
 	public NoiseMap(int width, int height)
 	{
 		this.WIDTH  = width;
@@ -44,12 +53,17 @@ public class NoiseMap
 	{
 		random.setSeed(seed);
 	}
-
-	public void generate()
-	{
-		generate(null, null);
-	}
-
+	
+	/**
+	 * Generate the values that determine the height of a Chunk's
+	 * generated terrain. The values are based upon the left and
+	 * right NoiseMaps given.
+	 * 
+	 * @param left The NoiseMap that is directly left of the current
+	 * 		NoiseMap.
+	 * @param right The NoiseMap that is directly right of the current
+	 * 		NoiseMap.
+	 */
 	public void generate(NoiseMap left, NoiseMap right)
 	{
 		int      index = 0;

@@ -32,6 +32,7 @@ import net.foxycorndog.thedigginggame.item.tile.Tile;
 public class Inventory
 {
 	private	boolean			doubleClicked;
+	private	boolean			open;
 	
 	private	int				capacity;
 	private	int				width, height;
@@ -501,6 +502,56 @@ public class Inventory
 		bundle.endEditingVertices();
 		
 		backgroundImage.setSize(Math.round(backgroundImage.getWidth() * scale), Math.round(backgroundImage.getHeight() * scale));
+	}
+	
+	/**
+	 * Get whether or not the Inventory is open and functional.
+	 * 
+	 * @return Whether or not the Inventory is open and functional.
+	 */
+	public boolean isOpen()
+	{
+		return open;
+	}
+	
+	/**
+	 * Open the Inventory and allow the whole thing to be rendered and
+	 * used.
+	 */
+	public void open()
+	{
+		open = true;
+		
+		setEnabled(true);
+	}
+	
+	/**
+	 * Close the Inventory and prevent the whole thing from rendering and
+	 * being usable.
+	 */
+	public void close()
+	{
+		open = false;
+		
+		currentItem = null;
+		
+		setEnabled(false);
+	}
+	
+	/**
+	 * Toggle whether to open the Inventory or close depending on the
+	 * current status of the Inventory (if it is open or closed).
+	 */
+	public void toggleOpen()
+	{
+		if (open)
+		{
+			close();
+		}
+		else	
+		{
+			open();
+		}
 	}
 	
 	/**

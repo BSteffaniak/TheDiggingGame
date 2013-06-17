@@ -5,12 +5,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Random;
 
 import javax.imageio.ImageIO;
 
 import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.item.Item;
+import net.foxycorndog.thedigginggame.map.terrain.NoiseMap;
 
 /**
  * Class that holds information for a Tile that is used in the terrain.
@@ -24,6 +26,7 @@ import net.foxycorndog.thedigginggame.item.Item;
 public class Tile extends Item
 {
 	private			int		minVein, maxVein;
+	private			int		rarity;
 	
 	private			boolean	collidable;
 	
@@ -36,6 +39,8 @@ public class Tile extends Item
 	
 	private	static	Tile	tiles[];
 	
+	private	static	final	Random	random = NoiseMap.random;
+	
 	static
 	{
 		tileSize = 16;
@@ -44,50 +49,50 @@ public class Tile extends Item
 		
 		int index = 0;
 		
-		tiles[index++] = new Tile(1,  0,  1, 1, 0, 0,  0, 0, 0,   true,  "Stone", 64);
-		tiles[index++] = new Tile(2,  0,  1, 1, 0, 0,  0, 3, 100, true,  "Dirt", 64);
-		tiles[index++] = new Tile(2,  1,  1, 1, 0, 0,  0, 3, 100, true,  "Sand", 64);
-		tiles[index++] = new Tile(3,  1,  1, 1, 0, 0,  0, 3, 100, true,  "Gravel", 64);
-		tiles[index++] = new Tile(3,  0,  1, 1, 0, 0,  0, 0, 0,   true,  "Grass", 64);
-		tiles[index++] = new Tile(4,  0,  1, 1, 0, 0,  0, 0, 0,   true,  "Wooden Planks", 64);
-		tiles[index++] = new Tile(5,  0,  1, 1, 0, 0,  0, 0, 0,   true,  "Double Stone Slab", 64);
-		tiles[index++] = new Tile(6,  0,  1, 1, 0, 0,  0, 0, 0,   true,  "Stone Slab", 64);
-		tiles[index++] = new Tile(7,  0,  1, 1, 0, 0,  0, 0, 0,   true,  "Bricks", 64);
-		tiles[index++] = new Tile(8,  0,  1, 1, 0, 0,  0, 0, 0,   true,  "TNT", 64);
-		tiles[index++] = new Tile(0,  1,  1, 1, 0, 0,  0, 0, 0,   true,  "Cobblestone", 64);
-		tiles[index++] = new Tile(1,  1,  1, 1, 0, 0,  0, 0, 0,   true,  "Bedrock", 64);
-		tiles[index++] = new Tile(4,  1,  1, 1, 0, 0,  0, 0, 0,   true,  "Log", 64);
-		tiles[index++] = new Tile(6,  1,  1, 1, 0, 0,  0, 0, 0,   true,  "Iron Block", 64);
-		tiles[index++] = new Tile(7,  1,  1, 1, 0, 0,  0, 0, 0,   true,  "Gold Block", 64);
-		tiles[index++] = new Tile(8,  1,  1, 1, 0, 0,  0, 0, 0,   true,  "Diamond Block", 64);
-		tiles[index++] = new Tile(9,  1,  1, 1, 0, 0,  0, 0, 0,   true,  "Emerald Block", 64);
-		tiles[index++] = new Tile(0,  2,  1, 1, 0, 0,  0, 1, 8,   true,  "Gold Ore", 64);
-		tiles[index++] = new Tile(1,  2,  1, 1, 0, 0,  0, 1, 8,   true,  "Iron Ore", 64);
-		tiles[index++] = new Tile(2,  3,  1, 1, 0, 0,  0, 1, 8,   true,  "Diamond Ore", 64);
-		tiles[index++] = new Tile(3,  3,  1, 1, 0, 0,  0, 1, 8,   true,  "Redstone Ore", 64);
-		tiles[index++] = new Tile(2,  2,  1, 1, 0, 0,  0, 1, 64,  true,  "Coal Ore", 64);
-		tiles[index++] = new Tile(3,  2,  1, 1, 0, 0,  0, 0, 0,   true,  "Bookshelf", 64);
-		tiles[index++] = new Tile(4,  2,  1, 1, 0, 0,  0, 0, 0,   true,  "Mossy Cobblestone", 64);
-		tiles[index++] = new Tile(5,  2,  1, 1, 0, 0,  0, 0, 0,   true,  "Obsidian", 64);
-		tiles[index++] = new Tile(12, 2,  1, 1, 0, 0,  0, 0, 0,   true,  "Furnace", 64);
-		tiles[index++] = new Tile(14, 2,  1, 1, 0, 0,  0, 0, 0,   true,  "Dispenser", 64);
-		tiles[index++] = new Tile(0,  3,  1, 1, 0, 0,  0, 0, 0,   true,  "Sponge", 64);
-		tiles[index++] = new Tile(1,  3,  1, 1, 1, 0,  0, 0, 0,   true,  "Glass", 64);
-		tiles[index++] = new Tile(5,  3,  1, 1, 0, 0,  0, 0, 0,   true,  "Leaves", 64);
-		tiles[index++] = new Tile(0,  4,  1, 1, 0, 0,  0, 0, 0,   true,  "White Wool", 64);
-		tiles[index++] = new Tile(2,  4,  1, 1, 0, 0,  0, 0, 0,   true,  "Snow Block", 64);
-		tiles[index++] = new Tile(3,  4,  1, 1, 0, 0,  0, 0, 0,   true,  "Ice Block", 64);
-		tiles[index++] = new Tile(4,  4,  1, 1, 0, 0,  0, 0, 0,   true,  "Snowy Grass", 64);
-		tiles[index++] = new Tile(6,  4,  1, 1, 0, 0,  0, 0, 0,   true,  "Cactus", 64);
-		tiles[index++] = new Tile(9,  4,  1, 1, 0, 0,  0, 0, 0,   true,  "Sugar Cane", 64);
-		tiles[index++] = new Tile(10, 4,  1, 1, 0, 0,  0, 0, 0,   true,  "Record Player", 1);
-		tiles[index++] = new Tile(0,  5,  1, 1, 1, 14, 0, 0, 0,   false, "Torch", 64);
-		tiles[index++] = new Tile(1,  5,  1, 2, 0, 0,  0, 0, 0,   true,  "Wooden Door", 8);
-		tiles[index++] = new Tile(2,  5,  1, 2, 0, 0,  0, 0, 0,   true,  "Iron Door", 8);
-		tiles[index++] = new Tile(3,  5,  1, 1, 1, 0,  1, 0, 0,   false, "Ladder", 64);
-		tiles[index++] = new Tile(4,  5,  1, 1, 0, 0,  0, 0, 0,   true,  "Trap Door", 64);
-		tiles[index++] = new Tile(0,  6,  1, 1, 0, 0,  0, 0, 0,   true,  "Lever", 64);
-		tiles[index++] = new Tile(0,  12, 1, 1, 0, 0,  0, 0, 0,   true,  "Sandstone", 64);
+		tiles[index++] = new Tile(1,  0,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Stone", 64);
+		tiles[index++] = new Tile(2,  0,  1, 1, 0, 0,  0, 3, 70,  10,  true,  "Dirt", 64);
+		tiles[index++] = new Tile(2,  1,  1, 1, 0, 0,  0, 3, 70,  10,  true,  "Sand", 64);
+		tiles[index++] = new Tile(3,  1,  1, 1, 0, 0,  0, 3, 70,  10,  true,  "Gravel", 64);
+		tiles[index++] = new Tile(3,  0,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Grass", 64);
+		tiles[index++] = new Tile(4,  0,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Wooden Planks", 64);
+		tiles[index++] = new Tile(5,  0,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Double Stone Slab", 64);
+		tiles[index++] = new Tile(6,  0,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Stone Slab", 64);
+		tiles[index++] = new Tile(7,  0,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Bricks", 64);
+		tiles[index++] = new Tile(8,  0,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "TNT", 64);
+		tiles[index++] = new Tile(0,  1,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Cobblestone", 64);
+		tiles[index++] = new Tile(1,  1,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Bedrock", 64);
+		tiles[index++] = new Tile(4,  1,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Log", 64);
+		tiles[index++] = new Tile(6,  1,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Iron Block", 64);
+		tiles[index++] = new Tile(7,  1,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Gold Block", 64);
+		tiles[index++] = new Tile(8,  1,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Diamond Block", 64);
+		tiles[index++] = new Tile(9,  1,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Emerald Block", 64);
+		tiles[index++] = new Tile(0,  2,  1, 1, 0, 0,  0, 1, 8,   70,  true,  "Gold Ore", 64);
+		tiles[index++] = new Tile(1,  2,  1, 1, 0, 0,  0, 1, 8,   25,  true,  "Iron Ore", 64);
+		tiles[index++] = new Tile(2,  3,  1, 1, 0, 0,  0, 1, 8,   400, true,  "Diamond Ore", 64);
+		tiles[index++] = new Tile(3,  3,  1, 1, 0, 0,  0, 1, 8,   60,  true,  "Redstone Ore", 64);
+		tiles[index++] = new Tile(2,  2,  1, 1, 0, 0,  0, 1, 64,  45,  true,  "Coal Ore", 64);
+		tiles[index++] = new Tile(3,  2,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Bookshelf", 64);
+		tiles[index++] = new Tile(4,  2,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Mossy Cobblestone", 64);
+		tiles[index++] = new Tile(5,  2,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Obsidian", 64);
+		tiles[index++] = new Tile(12, 2,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Furnace", 64);
+		tiles[index++] = new Tile(14, 2,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Dispenser", 64);
+		tiles[index++] = new Tile(0,  3,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Sponge", 64);
+		tiles[index++] = new Tile(1,  3,  1, 1, 1, 0,  0, 0, 0,   0,   true,  "Glass", 64);
+		tiles[index++] = new Tile(5,  3,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Leaves", 64);
+		tiles[index++] = new Tile(0,  4,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "White Wool", 64);
+		tiles[index++] = new Tile(2,  4,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Snow Block", 64);
+		tiles[index++] = new Tile(3,  4,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Ice Block", 64);
+		tiles[index++] = new Tile(4,  4,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Snowy Grass", 64);
+		tiles[index++] = new Tile(6,  4,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Cactus", 64);
+		tiles[index++] = new Tile(9,  4,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Sugar Cane", 64);
+		tiles[index++] = new Tile(10, 4,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Record Player", 1);
+		tiles[index++] = new Tile(0,  5,  1, 1, 1, 14, 0, 0, 0,   0,   false, "Torch", 64);
+		tiles[index++] = new Tile(1,  5,  1, 2, 0, 0,  0, 0, 0,   0,   true,  "Wooden Door", 8);
+		tiles[index++] = new Tile(2,  5,  1, 2, 0, 0,  0, 0, 0,   0,   true,  "Iron Door", 8);
+		tiles[index++] = new Tile(3,  5,  1, 1, 1, 0,  1, 0, 0,   0,   false, "Ladder", 64);
+		tiles[index++] = new Tile(4,  5,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Trap Door", 64);
+		tiles[index++] = new Tile(0,  6,  1, 1, 0, 0,  0, 0, 0,   0,   true,  "Lever", 64);
+		tiles[index++] = new Tile(0,  12, 1, 1, 0, 0,  0, 0, 0,   0,   true,  "Sandstone", 64);
 		
 		tileCount = index;
 	}
@@ -107,7 +112,7 @@ public class Tile extends Item
 	 * 		stacked in one Inventory Slot before filling the Slot to
 	 * 		its max.
 	 */
-	public Tile(int x, int y, int cols, int rows, float transparency, float light, float climbSpeed, int minVein, int maxVein, boolean collidable, String name, int stackSize)
+	public Tile(int x, int y, int cols, int rows, float transparency, float light, float climbSpeed, int minVein, int maxVein, int rarity, boolean collidable, String name, int stackSize)
 	{
 		super(name, x, y, cols, rows, stackSize);
 		
@@ -117,6 +122,8 @@ public class Tile extends Item
 		
 		this.minVein      = minVein;
 		this.maxVein      = maxVein;
+		
+		this.rarity       = rarity;
 		
 		this.collidable   = collidable;
 	}
@@ -243,7 +250,26 @@ public class Tile extends Item
 	 */
 	public static Tile getRandomTile()
 	{
-		Tile tile = tiles[(int)(Math.random() * tileCount)];
+		Tile tile = tiles[random.nextInt(tileCount)];
+		
+		return tile;
+	}
+	
+	/**
+	 * Get a random Tile instance from the Tiles array that suits
+	 * the depth given.
+	 * 
+	 * @return A random Tile instance from the Tiles array.
+	 */
+	public static Tile getRandomTile(int depth)
+	{
+		Tile tile = null;
+		
+		do
+		{
+			tile = tiles[(int)(Math.random() * tileCount)];
+		}
+		while (tile.rarity > 0 && !((tile.rarity < depth && tile.rarity >= 25 && random.nextInt(Math.round(tile.rarity / 50f)) == 0) || (random.nextInt(tile.rarity + (tile.rarity - depth) * 0) == 0)));
 		
 		return tile;
 	}

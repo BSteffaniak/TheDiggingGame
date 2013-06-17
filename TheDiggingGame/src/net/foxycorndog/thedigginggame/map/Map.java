@@ -826,7 +826,7 @@ public class Map
 	 * @return A Bounds instance describing the trimmed (x, y, rx, ry)
 	 * 		values.
 	 */
-	public Bounds trimLocation(int x, int y, int rx, int ry)
+	public static Bounds trimLocation(int x, int y, int rx, int ry)
 	{
 		int cs = Chunk.CHUNK_SIZE;
 		
