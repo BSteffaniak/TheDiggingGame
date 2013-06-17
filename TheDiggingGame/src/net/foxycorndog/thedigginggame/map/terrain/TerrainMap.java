@@ -133,17 +133,20 @@ public class TerrainMap
 	
 	private void addVeins(Chunk chunk)
 	{
+		//TODO: fix this for the individual locations.
+		Bounds bounds = chunk.getMap().trimBounds(0, 0, chunk.getRelativeX(), chunk.getRelativeY());
+		
 		for (int y = 0; y < HEIGHT; y++)
 		{
 			for (int x = 0; x < WIDTH; x++)
 			{
 				if (random.nextInt(30) == 0)
 				{
-					Tile tile = Tile.getRandomTile();
+					Tile tile = Tile.getRandomTile(bounds.getY());
 					
 					while (!tile.isVein())
 					{
-						tile = Tile.getRandomTile();
+						tile = Tile.getRandomTile(bounds.getY());
 					}
 					
 					addVein(x, y, tile, chunk);
