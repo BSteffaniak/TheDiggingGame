@@ -11,6 +11,8 @@ import java.net.URLClassLoader;
 
 import javax.imageio.ImageIO;
 
+import net.foxycorndog.jbiscuit.item.JItem;
+import net.foxycorndog.jbiscuit.item.JTile;
 import net.foxycorndog.jfoxylib.Display;
 import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.GameStarter;
@@ -30,6 +32,7 @@ import net.foxycorndog.jfoxylib.input.Keyboard;
 import net.foxycorndog.jfoxylib.input.Mouse;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
+import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
 import net.foxycorndog.jfoxylib.util.Intersects;
 import net.foxycorndog.thedigginggame.actor.Player;
 import net.foxycorndog.thedigginggame.chat.ChatBox;
@@ -225,6 +228,25 @@ public class TheDiggingGame
 		mapScale = 2;
 		guiScale = 4;
 		
+
+		int cols = 16;
+		int rows = 16;
+		
+		SpriteSheet sprites = null;
+		
+		try
+		{
+			sprites = new SpriteSheet(TheDiggingGame.getResourcesLocation() + "res/images/texturepacks/16/minecraft/terrain.png", cols, rows);
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		
+		JItem.setSprites(sprites);
+		JTile.setSprites(sprites);
+		JTile.setTileSize(16);
+		
 //		map = new Map(this);
 //		
 //		map.load("world");
@@ -236,21 +258,7 @@ public class TheDiggingGame
 //		
 //		map.addActor(player);
 		
-		try
-		{
-			font = new Font(resourcesLocation + "res/images/fonts/font.png", 26, 4,
-					new char[]
-					{
-						'A', 'B', 'C', 'D', 'E', 'F',  'G', 'H', 'I', 'J', 'K', 'L',  'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-						'a', 'b', 'c', 'd', 'e', 'f',  'g', 'h', 'i', 'j', 'k', 'l',  'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-						'0', '1', '2', '3', '4', '5',  '6', '7', '8', '9', '_', '-',  '+', '=', '~', '`', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')',
-						'?', '>', '<', ';', ':', '\'', '"', '{', '}', '[', ']', '\\', '|', ',', '.', '/', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '
-					});
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
+		font = Font.getDefaultFont();
 		
 //		cursor = new Cursor(Tile.getTileSize());
 //		
@@ -339,6 +347,11 @@ public class TheDiggingGame
 	 */
 	public void render2D()
 	{
+		if (player.isFocused())
+		{
+			player.center();
+		}
+		
 		font.render("Editing: " + editing, 0, 0, 10, 2, Font.LEFT, Font.TOP, null);
 		
 		GL.pushMatrix();
@@ -372,7 +385,6 @@ public class TheDiggingGame
 		}
 		
 		chatBox.render();
-		
 	}
 	
 	/**
@@ -436,9 +448,9 @@ public class TheDiggingGame
 				
 				if ((cursorX != oldCursorX || cursorY != oldCursorY) || !tilePlaced || editing != oldEditing)
 				{
-					Item item = player.getQuickBar().getSelectedItem();
+					JItem item = player.getQuickBar().getSelectedItem();
 					
-					if (item instanceof Tile)
+					if (item instanceof JTile)
 					{
 						Tile    tile     = (Tile)item;
 						

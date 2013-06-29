@@ -12,6 +12,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import net.foxycorndog.jbiscuit.actor.JActor;
+import net.foxycorndog.jbiscuit.map.JChunk;
+import net.foxycorndog.jbiscuit.map.JTileMap;
 import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
@@ -23,7 +26,6 @@ import net.foxycorndog.jfoxyutil.Queue;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.actor.Actor;
 import net.foxycorndog.thedigginggame.item.tile.Tile;
-import net.foxycorndog.thedigginggame.map.Chunk.Intersections;
 
 /**
  * Class that holds the information of everything on the map. Such things
@@ -35,20 +37,14 @@ import net.foxycorndog.thedigginggame.map.Chunk.Intersections;
  * @version Feb 22, 2013 at 4:23:10 AM
  * @version	v0.1
  */
-public class Map
+public class Map extends JTileMap
 {
-	private boolean			collision;
-	private	boolean			generatingChunks;
+	private boolean				collision;
+	private	boolean				generatingChunks;
 	
-	private float			x, y;
+	private TheDiggingGame		game;
 	
-	private TheDiggingGame	game;
-	
-	private Thread			lightingThread, generatorThread;
-	
-	private HashMap<Integer, HashMap<Integer, Chunk>> chunks;
-	
-	private ArrayList<Actor>	actors;
+	private Thread				generatorThread;
 	
 	private	Queue<Chunk>		chunkQueue;
 	
@@ -71,36 +67,12 @@ public class Map
 		 */
 		public abstract void run(Chunk chunk);
 	}
-
-	/**
-	 * Class that has a method that is to be implemented. Used
-	 * While iterating through the Actors.
-	 * 
-	 * @author	Braden Steffaniak
-	 * @since	Jun 5, 2013 at 5:09:32 PM
-	 * @since	v0.3
-	 * @version	Jun 5, 2013 at 5:09:32 PM
-	 * @version	v0.3
-	 */
-	private abstract class ActorTask
-	{
-		/**
-		 * Method to be implemented.
-		 * 
-		 * @param actor The Actor that is currently being iterated.
-		 */
-		public abstract void run(Actor actor);
-	}
 	
 	/**
 	 * Construct a Map.
 	 */
 	public Map(TheDiggingGame game)
 	{
-		chunks     = new HashMap<Integer, HashMap<Integer, Chunk>>();
-		
-		actors     = new ArrayList<Actor>();
-		
 		this.game  = game;
 		
 		chunkQueue = new Queue<Chunk>();
@@ -126,7 +98,7 @@ public class Map
 					}
 					
 					generatingChunks = true;
-					
+					//TODO: FIX THIS backwardsnexx.
 					for (int i = chunkQueue.size() - 1; i >= 0; i--)
 					{
 						Chunk chunk = chunkQueue.peek(i);
@@ -193,45 +165,6 @@ public class Map
 	}
 	
 	/**
-	 * @return An ArrayList of all of the Actors in the Map.
-	 */
-	public ArrayList<Actor> getActors()
-	{
-		return actors;
-	}
-	
-	/**
-	 * Add an actor to the Map if not already added.
-	 * 
-	 * @param actor The Actor to add to the map.
-	 */
-	public void addActor(Actor actor)
-	{
-		if (!actors.contains(actor))
-		{
-			actors.add(actor);
-		}
-	}
-	
-	/**
-	 * Used to set an Actor to the center of the Display.
-	 * 
-	 * @param actor
-	 */
-	public void setActorFocused(Actor actor)
-	{
-		actor.setFocused(true);
-		
-		for (int i = actors.size() - 1; i >= 0; i--)
-		{
-			if (actors.get(i) != actor)
-			{
-				actors.get(i).setFocused(false);
-			}
-		}
-	}
-	
-	/**
 	 * Generate a Chunk at the specified location with the specified
 	 * Tiles.
 	 * 
@@ -252,12 +185,7 @@ public class Map
 //			chunk.calculateLighting();
 //			chunk.updateLighting();
 			
-			if (!chunks.containsKey(rx))
-			{
-				chunks.put(rx, new HashMap<Integer, Chunk>());
-			}
-			
-			chunks.get(rx).put(ry, chunk);
+			addChunk(rx, ry, chunk);
 			
 			chunkQueue.enqueue(chunk);
 			
@@ -280,13 +208,8 @@ public class Map
 		if (!isChunkAt(rx, ry))
 		{
 			Chunk chunk = new Chunk(this, rx, ry);
-			
-			if (!chunks.containsKey(rx))
-			{
-				chunks.put(rx, new HashMap<Integer, Chunk>());
-			}
-			
-			chunks.get(rx).put(ry, chunk);
+
+			addChunk(rx, ry, chunk);
 			
 //			chunk.update();
 			
@@ -319,13 +242,8 @@ public class Map
 		if (!isChunkAt(rx, ry))
 		{
 			Chunk chunk = new Chunk(this, rx, ry);
-			
-			if (!chunks.containsKey(rx))
-			{
-				chunks.put(rx, new HashMap<Integer, Chunk>());
-			}
-			
-			chunks.get(rx).put(ry, chunk);
+
+			addChunk(rx, ry, chunk);
 			
 			chunk.addGenerateHook(hook);
 			
@@ -333,7 +251,6 @@ public class Map
 			Chunk right = getChunk(rx + 1, ry);
 			
 //			chunk.generate(left, right);
-			
 			chunkQueue.enqueue(chunk);
 			
 			return true;
@@ -364,14 +281,14 @@ public class Map
 		int startX = -chunkWidth  - width  / 2;
 		int startY = -chunkHeight - height / 2;
 		
-		int x = 0;
+		int x = -width;
 		int y = startY;
 		
 		while (y <= height)
 		{
 			x = startX;
 			
-			while (x <= width)
+			while (x < width * 2)
 			{
 				int offsetX = x + (int)(actor.getX());
 				int offsetY = y + (int)(actor.getY());
@@ -393,16 +310,11 @@ public class Map
 				{
 					Chunk chunk = new Chunk(this, rx, ry);
 					
-					if (!chunks.containsKey(rx))
-					{
-						chunks.put(rx, new HashMap<Integer, Chunk>());
-					}
-					
 					chunk.update();
 					
 					chunkQueue.enqueue(chunk);
-				
-					chunks.get(rx).put(ry, chunk);
+					
+					addChunk(rx, ry, chunk);
 				}
 				
 				x += chunkWidth;
@@ -422,31 +334,9 @@ public class Map
 	
 	/**
 	 * Tell whether there is a Chunk already located at the specified
-	 * location.
-	 * 
-	 * @param rx The relative horizontal location of the location
-	 * 		to check.
-	 * @param ry The relative vertical location of the location
-	 * 		to check.
-	 * @return Whether there is a Chunk at the location or not.
-	 */
-	public boolean isChunkAt(int rx, int ry)
-	{
-		boolean contains = false;
-		
-		if (chunks.containsKey(rx))
-		{
-			contains = chunks.get(rx).containsKey(ry);
-		}
-		
-		return contains;
-	}
-	
-	/**
-	 * Tell whether there is a Chunk already located at the specified
 	 * location relative to the specified Chunk.
 	 * 
-	 * @param Chunk The Chunk to search relative to.
+	 * @param JChunk The Chunk to search relative to.
 	 * @param x The relative horizontal location of the location
 	 * 		to check.
 	 * @param y The relative vertical location of the location
@@ -474,7 +364,7 @@ public class Map
 	 * Get the Chunk instance that is located at the specified location
 	 * relative to the specified Chunk if there is one.
 	 * 
-	 * @param Chunk The Chunk to search relative to.
+	 * @param JChunk The Chunk to search relative to.
 	 * @param x The relative horizontal location of the location
 	 * 		to get the Chunk.
 	 * @param y The relative vertical location of the location
@@ -508,7 +398,7 @@ public class Map
 	 * Get the Chunk instance that is located at the specified location
 	 * relative to the specified Chunk if there is one.
 	 * 
-	 * @param Chunk The Chunk to search relative to.
+	 * @param JChunk The Chunk to search relative to.
 	 * @param x The relative horizontal location of the location
 	 * 		to get the Chunk.
 	 * @param y The relative vertical location of the location
@@ -545,9 +435,9 @@ public class Map
 	 */
 	public Chunk getChunk(int rx, int ry)
 	{
-		if (chunks.containsKey(rx))
+		if (getChunks().containsKey(rx))
 		{
-			return chunks.get(rx).get(ry);
+			return (Chunk)getChunks().get(rx).get(ry);
 		}
 		
 		return null;
@@ -558,12 +448,11 @@ public class Map
 	 */
 	public void render()
 	{
-		GL.setTextureScaleMinMethod(GL.NEAREST);
-		GL.setTextureScaleMagMethod(GL.NEAREST);
+		super.render();
 		
 		GL.pushMatrix();
 		{
-			GL.translate(x, y, 0);
+			GL.translate(getX(), getY(), 0);
 			
 			iterateVisibleChunks(new ChunkTask()
 			{
@@ -573,20 +462,15 @@ public class Map
 				}
 			});
 		
-			for (int i = actors.size() - 1; i >= 0; i--)
-			{
-				Actor actor = actors.get(i);
-				
-				actor.render();
-			}
+			renderActors();
 			
-			iterateVisibleChunks(new ChunkTask()
-			{
-				public void run(Chunk chunk)
-				{
-					chunk.renderLighting();
-				}
-			});
+//			iterateVisibleChunks(new ChunkTask()
+//			{
+//				public void run(Chunk chunk)
+//				{
+//					chunk.renderLighting();
+//				}
+//			});
 		}
 		GL.popMatrix();
 	}
@@ -673,9 +557,9 @@ public class Map
 		
 		if (isChunkAt(rx, ry))
 		{
-			chunk = chunks.get(rx).get(ry);
+			chunk = getChunk(rx, ry);
 			
-			tile  = chunk.getTile(x, y, layer);
+			tile  = (Tile)chunk.getTile(x, y, layer);
 		}
 		
 		return tile;
@@ -708,9 +592,9 @@ public class Map
 		
 		if (isChunkAt(rx, ry))
 		{
-			chunk = chunks.get(rx).get(ry);
+			chunk = getChunk(rx, ry);
 			
-			tile  = chunk.getTile(x, y, layer);
+			tile  = (Tile)chunk.getTile(x, y, layer);
 		}
 		
 		return tile;
@@ -743,7 +627,7 @@ public class Map
 		
 		if (isChunkAt(rx, ry))
 		{
-			Chunk chunk = chunks.get(rx).get(ry);
+			Chunk chunk = getChunk(rx, ry);
 			
 			return chunk.addTile(tile, x % chunkSize, y % chunkSize, layer, replace);
 		}
@@ -777,7 +661,7 @@ public class Map
 		
 		if (isChunkAt(rx, ry))
 		{
-			Chunk chunk = chunks.get(rx).get(ry);
+			Chunk chunk = getChunk(rx, ry);
 			
 			return chunk.removeTile(x % chunkSize, y % chunkSize, layer);
 		}
@@ -805,7 +689,7 @@ public class Map
 		
 		if (isChunkAt(rx, ry))
 		{
-			Chunk chunk = chunks.get(rx).get(ry);
+			Chunk chunk = getChunk(rx, ry);
 			
 			chunk.update();
 		}
@@ -923,7 +807,7 @@ public class Map
 	 */
 	private void iterateChunks(ChunkTask task)
 	{
-		Collection<HashMap<Integer, Chunk>> values = chunks.values();
+		Collection<HashMap<Integer, JChunk>> values = getChunks().values();
 		
 		Iterator iterator = values.iterator();
 		
@@ -950,7 +834,7 @@ public class Map
 	 */
 	private void iterateVisibleChunks(ChunkTask task)
 	{
-		Collection<HashMap<Integer, Chunk>> values = chunks.values();
+		Collection<HashMap<Integer, JChunk>> values = getChunks().values();
 		
 		Iterator iterator = values.iterator();
 		
@@ -969,20 +853,6 @@ public class Map
 					task.run(chunk);
 				}
 			}
-		}
-	}
-	
-	/**
-	 * Iterate through all of the Actors in the Map and apply the task
-	 * with them.
-	 * 
-	 * @param task The task to run with all of the Actor instances.
-	 */
-	private void iterateActors(ActorTask task)
-	{
-		for (Actor actor : actors)
-		{
-			task.run(actor);
 		}
 	}
 	
@@ -1022,46 +892,6 @@ public class Map
 		
 		return false;
 //		return collision;
-	}
-	
-	/**
-	 * @return The horizontal location of the Map.
-	 */
-	public float getX()
-	{
-		return x;
-	}
-	
-	/**
-	 * @return The vertical location of the Map.
-	 */
-	public float getY()
-	{
-		return y;
-	}
-	
-	/**
-	 * Set the absolute location of the Map.
-	 * 
-	 * @param x The horizontal component to set.
-	 * @param y The vertical component to set.
-	 */
-	public void setLocation(float x, float y)
-	{
-		this.x = x;
-		this.y = y;
-	}
-	
-	/**
-	 * Move the Map the specified amount.
-	 * 
-	 * @param dx The displacement horizontal component.
-	 * @param dy The displacement vertical component.
-	 */
-	public void move(float dx, float dy)
-	{
-		this.x += dx;
-		this.y += dy;
 	}
 	
 	/**
@@ -1180,7 +1010,7 @@ public class Map
 		
 		iterateActors(new ActorTask()
 		{
-			public void run(Actor actor)
+			public void run(JActor actor)
 			{
 				actor.update(delta);
 			}

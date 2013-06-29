@@ -9,6 +9,7 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 
+import net.foxycorndog.jbiscuit.item.JTile;
 import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.item.Item;
@@ -23,7 +24,7 @@ import net.foxycorndog.thedigginggame.map.terrain.NoiseMap;
  * @version Feb 22, 2013 at 4:23:24 AM
  * @version	v0.2
  */
-public class Tile extends Item
+public class Tile extends JTile
 {
 	private			int		minVein, maxVein;
 	private			int		rarity;
@@ -114,7 +115,7 @@ public class Tile extends Item
 	 */
 	public Tile(int x, int y, int cols, int rows, float transparency, float light, float climbSpeed, int minVein, int maxVein, int rarity, boolean collidable, String name, int stackSize)
 	{
-		super(name, x, y, cols, rows, stackSize);
+		super(name, x, y, cols, rows, collidable, stackSize);
 		
 		this.transparency = transparency;
 		this.light        = light;

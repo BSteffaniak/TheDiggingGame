@@ -1,10 +1,10 @@
 package net.foxycorndog.thedigginggame.chat;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
+import net.foxycorndog.jfoxylib.Color;
 import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.components.Image;
 import net.foxycorndog.jfoxylib.components.TextField;
@@ -326,7 +326,7 @@ public class ChatBox
 		
 		GL.pushMatrix();
 		{
-			float color[] = GL.getColor();
+			Color color = GL.getColor();
 			
 			GL.translate(0, 0, 25);
 			

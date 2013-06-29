@@ -225,7 +225,7 @@ public class MainMenu extends Menu
 		optionsButton.addButtonListener(buttonListener);
 		quitButton.addButtonListener(buttonListener);
 		
-		width  = font.getWidth("The Digging");
+		width  = (int)Math.ceil(font.getWidth("The Digging"));
 		height = 80 + font.getGlyphHeight();
 	}
 	

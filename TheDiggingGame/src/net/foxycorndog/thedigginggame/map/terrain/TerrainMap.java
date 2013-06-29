@@ -23,7 +23,7 @@ public class TerrainMap
 	private					int 	biome;
 //	private					Tile	tiles[];
 	
-	private			final	int		WIDTH, HEIGHT;
+	private			final	int		width, height;
 	
 	private	static	final	float	PI = 3.14159f;
 	
@@ -40,8 +40,8 @@ public class TerrainMap
 	 */
 	public TerrainMap(int width, int height, int biome)
 	{
-		this.WIDTH  = width;
-		this.HEIGHT = height;
+		this.width  = width;
+		this.height = height;
 		this.biome  = biome;
 		
 //		tiles       = new Tile[width * height * 3];
@@ -92,16 +92,16 @@ public class TerrainMap
 		}
 		else if (chunk.isGround())
 		{
-			values = new int[WIDTH];
+			values = new int[width];
 			
 			for (int i = 0; i < values.length; i++)
 			{
-				values[i] = WIDTH - 1;
+				values[i] = width - 1;
 			}
 		}
 		else if (chunk.isAir())
 		{
-			values = new int[WIDTH];
+			values = new int[width];
 			
 			for (int i = 0; i < values.length; i++)
 			{
@@ -109,7 +109,7 @@ public class TerrainMap
 			}
 		}
 		
-		for (int x = 0; x < WIDTH; x++)
+		for (int x = 0; x < width; x++)
 		{
 			for (int y = 0; y <= values[x]; y++)
 			{
@@ -128,35 +128,26 @@ public class TerrainMap
 	{
 		if (chunk.isSurface())
 		{
-			for (int x = 0; x < WIDTH; x++)
+			for (int x = 0; x < width; x++)
 			{
-				int  hei     = values[x] - getSurfaceHeight() - getMidSurfaceHeight();
+				int  hei     = getSurfaceHeight() + getMidSurfaceHeight();
 				
 				int  counter = 0;
 				
 				Tile tile    = getSurfaceTile();
 				
-				for (int y = HEIGHT; y >= hei; y--)
+				for (int y = values[x]; counter < hei; y--)
 				{
-					if (y <= values[x])
+					if (counter >= getSurfaceHeight())
 					{
-						if (counter >= getSurfaceHeight())
-						{
-							tile = getMidSurfaceTile();
-						}
-						
-						counter++;
-	
-						chunk.addTile(tile, x, y, Chunk.BACKGROUND, true);
-						chunk.addTile(tile, x, y, Chunk.MIDDLEGROUND, true);
-//						chunk.addTile(tile, x, y, Chunk.FOREGROUND, true);
+						tile = getMidSurfaceTile();
 					}
-//					else
-//					{
-//						chunk.removeTile(x, y, Chunk.BACKGROUND);
-//						chunk.removeTile(x, y, Chunk.MIDDLEGROUND);
-//						chunk.removeTile(x, y, Chunk.FOREGROUND);
-//					}
+
+					chunk.addTile(tile, x, y, Chunk.BACKGROUND, true);
+					chunk.addTile(tile, x, y, Chunk.MIDDLEGROUND, true);
+//					chunk.addTile(tile, x, y, Chunk.FOREGROUND, true);
+					
+					counter++;
 				}
 			}
 		}
@@ -167,9 +158,9 @@ public class TerrainMap
 		//TODO: fix this for the individual locations.
 		Bounds bounds = Map.trimLocation(0, 0, chunk.getRelativeX(), chunk.getRelativeY());
 		
-		for (int y = 0; y < HEIGHT; y++)
+		for (int y = 0; y < height; y++)
 		{
-			for (int x = 0; x < WIDTH; x++)
+			for (int x = 0; x < width; x++)
 			{
 				if (random.nextInt(70) == 0)
 				{

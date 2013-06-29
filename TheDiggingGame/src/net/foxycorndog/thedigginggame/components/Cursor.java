@@ -45,7 +45,7 @@ public class Cursor
 		g.drawRect(0, 0, size - 1, size - 1);
 		g.dispose();
 		
-		texture = new Texture(img, false);
+		texture = new Texture(img);
 		
 		bundle = new Bundle(3 * 2, 2, true, false);
 		

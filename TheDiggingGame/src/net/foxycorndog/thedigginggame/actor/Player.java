@@ -9,6 +9,7 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import net.foxycorndog.jbiscuit.item.JItem;
 import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
@@ -42,9 +43,9 @@ public class Player extends Actor
 	 */
 	public Player(Map map)
 	{
-		super(map, 16, 32, 1.25f, 25);
+		super(map, 16, 32, 1.25f, 45, 1);
 		
-		float guiScale  = getMap().getGame().getGUIScale();
+		float guiScale  = ((Map)getMap()).getGame().getGUIScale();
 		
 		float scale     = guiScale / 3;
 		
@@ -54,10 +55,11 @@ public class Player extends Actor
 		
 		Inventory inventory = new Inventory(9, 4, Inventory.PLAYER_INVENTORY_IMAGE);
 		inventory.loadVertices(guiScale, hMargin, vMargin, colOffset, new float[] { 7, 4, 0, 0 });
+		inventory.setFont(TheDiggingGame.getFont());
 		
 		setInventory(inventory);
 		
-		quickBar = new QuickBar(this);
+		quickBar = new QuickBar();
 		
 		SpriteSheet sprites = null;
 		
@@ -516,8 +518,6 @@ public class Player extends Actor
 		private	int		width;
 		private	int		selectedIndex;
 		
-		private	Player	player;
-		
 		private Bundle	bundle;
 		
 		private Texture	slots[], selectedSlots[];
@@ -527,10 +527,8 @@ public class Player extends Actor
 		 * 
 		 * @param player The Player that owns the QuickBar.
 		 */
-		public QuickBar(Player player)
+		public QuickBar()
 		{
-			this.player     = player;
-			
 			this.slotCount = 9;
 			
 			bundle = new Bundle(3 * 2 * slotCount, 2, true, false);
@@ -602,7 +600,7 @@ public class Player extends Actor
 		 * @return The Item instance that is currently selected in the
 		 * 		QuickBar.
 		 */
-		public Item getSelectedItem()
+		public JItem getSelectedItem()
 		{
 			return getInventory().getItem(selectedIndex);
 		}
@@ -643,7 +641,7 @@ public class Player extends Actor
 		{
 			GL.pushMatrix();
 			{
-				float guiScale = getMap().getGame().getGUIScale();
+				float guiScale = ((Map)getMap()).getGame().getGUIScale();
 				
 				GL.translate(Frame.getWidth() / 2 - (width * guiScale) / 2, 0, 12);
 				
