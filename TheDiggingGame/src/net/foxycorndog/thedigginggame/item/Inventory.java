@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import net.foxycorndog.jbiscuit.item.JInventory;
+import net.foxycorndog.jbiscuit.item.JItemContainer;
 import net.foxycorndog.jfoxylib.components.Button;
 import net.foxycorndog.jfoxylib.components.Image;
 import net.foxycorndog.jfoxylib.events.ButtonEvent;
@@ -47,7 +48,7 @@ public class Inventory extends JInventory
 			PLAYER_INVENTORY_IMAGE.setSpriteY(32);
 			PLAYER_INVENTORY_IMAGE.setSpriteCols(185);
 			PLAYER_INVENTORY_IMAGE.setSpriteRows(129);
-			PLAYER_INVENTORY_IMAGE.setImage(playerInventorySprites);
+			PLAYER_INVENTORY_IMAGE.setTexture(playerInventorySprites);
 			
 //			CHEST_INVENTORY_IMAGE.setImage(TheDiggingGame.getResourcesLocation() + "res/images/gui/ChestInventory.png");
 		}
@@ -61,12 +62,16 @@ public class Inventory extends JInventory
 	/**
 	 * Create an Inventory instance.
 	 * 
-	 * @param capacity The number of slots for holding stacks of Items
-	 * 		that the Inventory has.
+	 * @param width The amount of horizontal slots the Inventory will
+	 * 		contain.
+	 * @param height The amount of vertical slots the Inventory will
+	 * 		contain.
+	 * @param container The container that contains the specifications
+	 * 		of the Items.
 	 */
-	public Inventory(int width, int height, Image backgroundImage)
+	public Inventory(int width, int height, Image backgroundImage, JItemContainer container)
 	{
-		super(width, height);
+		super(width, height, container);
 		
 		setBackgroundImage(backgroundImage);
 	}

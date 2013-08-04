@@ -34,22 +34,26 @@ import net.foxycorndog.thedigginggame.launcher.Launcher;
  */
 public class MainMenu extends Menu
 {
-	private boolean	splashScaleIncreasing;
-	private boolean	rUp, gUp, bUp;
+	private boolean			splashScaleIncreasing;
+	private boolean			rUp, gUp, bUp;
 	
-	private int		r, g, b;
-	private int		width, height;
+	private int				r, g, b;
+	private int				width, height;
 	
-	private float	counter;
-	private float	splashScale;
+	private float			counter;
+	private float			splashScale;
 	
-	private String	splash;
+	private String			splash;
 	
-	private Image	backgroundImage;
+	private Image			backgroundImage;
 	
-	private Button	playButton, optionsButton, quitButton;
+	private Button			playButton, optionsButton, quitButton;
 	
-	private Font	font;
+	private Font			font;
+	
+	private OptionsMenu		optionsMenu;
+	
+	private Launcher		launcher;
 	
 	private static String	splashes[];
 	
@@ -73,10 +77,12 @@ public class MainMenu extends Menu
 	{
 		super(parent);
 		
-		init();
+		this.launcher = launcher;
 		
 		this.font = font;
 
+		init();
+		
 		r = (int)(Math.random() * 256);
 		g = (int)(Math.random() * 256);
 		b = (int)(Math.random() * 256);
@@ -138,7 +144,7 @@ public class MainMenu extends Menu
 			
 			normalImage = ImageIO.read(new File(res + "res/images/GUI/button.png"));
 			hoverImage  = ImageIO.read(new File(res + "res/images/GUI/buttonhover.png"));
-			background = ImageIO.read(new File(res + "res/images/background.png"));
+			background  = ImageIO.read(new File(res + "res/images/background.png"));
 		}
 		catch (IOException e)
 		{
@@ -150,7 +156,7 @@ public class MainMenu extends Menu
 		playButton.setLocation(0, -7);
 		playButton.setFont(font);
 		playButton.setText("Play");
-		playButton.setImage(normalImage);
+		playButton.setTexture(normalImage);
 		playButton.setHoverImage(hoverImage);
 
 		optionsButton = new Button(this);
@@ -158,7 +164,7 @@ public class MainMenu extends Menu
 		optionsButton.setLocation(0, -42);
 		optionsButton.setFont(font);
 		optionsButton.setText("Options");
-		optionsButton.setImage(normalImage);
+		optionsButton.setTexture(normalImage);
 		optionsButton.setHoverImage(hoverImage);
 
 		quitButton = new Button(this);
@@ -166,14 +172,14 @@ public class MainMenu extends Menu
 		quitButton.setLocation(0, -77);
 		quitButton.setFont(font);
 		quitButton.setText("Quit");
-		quitButton.setImage(normalImage);
+		quitButton.setTexture(normalImage);
 		quitButton.setHoverImage(hoverImage);
 		
 		int max = Math.max(Display.getWidth(), Display.getHeight());
 		
 		backgroundImage = new Image(this);
 		backgroundImage.setSize(max, max);
-		backgroundImage.setImage(background, 75, 75);
+		backgroundImage.setTexture(background, 75, 75);
 		
 		ButtonListener buttonListener = new ButtonListener()
 		{
@@ -190,7 +196,7 @@ public class MainMenu extends Menu
 				}
 				else if (event.getSource() == optionsButton)
 				{
-					launcher.openOptionsMenu();
+					openOptionsMenu();
 				}
 				else if (event.getSource() == quitButton)
 				{
@@ -230,29 +236,59 @@ public class MainMenu extends Menu
 	}
 	
 	/**
+	 * Opens the OptionsMenu so you can edit the game preferences.
+	 */
+	public void openOptionsMenu()
+	{
+		optionsMenu = new OptionsMenu(launcher, this, font, null);
+
+		setEnabled(false);
+		//setVisible(false);
+	}
+	
+	/**
+	 * Closes the OptionsMenu and returns you to the previous menu.
+	 */
+	public void closeOptionsMenu()
+	{
+		optionsMenu.dispose();
+		optionsMenu = null;
+		
+		setEnabled(true);
+		//setVisible(true);
+	}
+	
+	/**
 	 * Renders the Component to the screen.
 	 */
 	public void render()
 	{
 		float delta = 60f / Frame.getFPS();
 		
-		counter += delta;
-		
-		super.render();
-		
-		renderSplashMessage();
-
-		GL.setColor(r / 255f, g / 255f, b / 255f, 1);
-		font.render("The Digging", 0, 73, 2, 3, Font.CENTER, Font.CENTER, null);
-		font.render("Game", 0, 44, 2, 3, Font.CENTER, Font.CENTER, null);
-		
-		GL.setColor(0, 0, 0, 0.5f);
-		font.render("The Digging", 3, 73 + 3, 1, 3, Font.CENTER, Font.CENTER, null);
-		font.render("Game", 3, 44 + 3, 1, 3, Font.CENTER, Font.CENTER, null);
-		
-		GL.setColor(1, 1, 1, 1);
+		if (optionsMenu != null)
+		{
+			optionsMenu.render();
+		}
+		else
+		{
+			counter += delta;
 			
-		updateColor();
+			super.render();
+			
+			renderSplashMessage();
+	
+			GL.setColor(r / 255f, g / 255f, b / 255f, 1);
+			font.render("The Digging", 0, 73, 2, 3, Font.CENTER, Font.CENTER, null);
+			font.render("Game", 0, 44, 2, 3, Font.CENTER, Font.CENTER, null);
+			
+			GL.setColor(0, 0, 0, 0.5f);
+			font.render("The Digging", 3, 73 + 3, 1, 3, Font.CENTER, Font.CENTER, null);
+			font.render("Game", 3, 44 + 3, 1, 3, Font.CENTER, Font.CENTER, null);
+			
+			GL.setColor(1, 1, 1, 1);
+				
+			updateColor();
+		}
 	}
 	
 	/**

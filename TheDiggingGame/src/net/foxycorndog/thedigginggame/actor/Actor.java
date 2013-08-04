@@ -25,7 +25,6 @@ import net.foxycorndog.thedigginggame.map.Map;
  */
 public class Actor extends JActor
 {
-	private	boolean			climbing;
 	private	boolean			increaseRot;
 	private	boolean			sprinting;
 	
@@ -138,7 +137,7 @@ public class Actor extends JActor
 		
 		if (!isJumping())
 		{
-			if (climbing)
+			if (isClimbing())
 			{
 				if (!tryClimb(delta))
 				{

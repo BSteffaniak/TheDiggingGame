@@ -10,6 +10,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import net.foxycorndog.jbiscuit.item.JItem;
+import net.foxycorndog.jbiscuit.item.JItemContainer;
 import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
@@ -40,8 +41,10 @@ public class Player extends Actor
 	 * that is used in the Actor.
 	 * 
 	 * @param map The Map to add the Player to.
+	 * @param container The container that contains the Items that can be
+	 * 		placed inside the Player's Inventory.
 	 */
-	public Player(Map map)
+	public Player(Map map, JItemContainer container)
 	{
 		super(map, 16, 32, 1.25f, 45, 1);
 		
@@ -53,7 +56,7 @@ public class Player extends Actor
 		float hMargin   = 10;
 		float vMargin   = 10;
 		
-		Inventory inventory = new Inventory(9, 4, Inventory.PLAYER_INVENTORY_IMAGE);
+		Inventory inventory = new Inventory(9, 4, Inventory.PLAYER_INVENTORY_IMAGE, container);
 		inventory.loadVertices(guiScale, hMargin, vMargin, colOffset, new float[] { 7, 4, 0, 0 });
 		inventory.setFont(TheDiggingGame.getFont());
 		

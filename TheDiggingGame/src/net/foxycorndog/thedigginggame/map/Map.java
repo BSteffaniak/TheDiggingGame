@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import net.foxycorndog.jbiscuit.actor.JActor;
+import net.foxycorndog.jbiscuit.item.tile.JTileContainer;
 import net.foxycorndog.jbiscuit.map.JChunk;
 import net.foxycorndog.jbiscuit.map.JTileMap;
 import net.foxycorndog.jfoxylib.Frame;
@@ -70,9 +71,14 @@ public class Map extends JTileMap
 	
 	/**
 	 * Construct a Map.
+	 * 
+	 * @param container The JTileContainer that holds the Tiles used in
+	 * 		the Map.
 	 */
-	public Map(TheDiggingGame game)
+	public Map(TheDiggingGame game, JTileContainer container)
 	{
+		super(32, 32, container);
+		
 		this.game  = game;
 		
 		chunkQueue = new Queue<Chunk>();
@@ -175,7 +181,7 @@ public class Map extends JTileMap
 	 */
 	public boolean generateChunk(int rx, int ry, Tile tiles[])
 	{
-		if (!isChunkAt(rx, ry))
+		if (!isChunk(rx, ry))
 		{
 			Chunk chunk = new Chunk(this, rx, ry);
 			
@@ -205,7 +211,7 @@ public class Map extends JTileMap
 	 */
 	public boolean generateChunk(int rx, int ry)
 	{
-		if (!isChunkAt(rx, ry))
+		if (!isChunk(rx, ry))
 		{
 			Chunk chunk = new Chunk(this, rx, ry);
 
@@ -239,7 +245,7 @@ public class Map extends JTileMap
 	 */
 	public boolean generateChunk(int rx, int ry, Thread hook)
 	{
-		if (!isChunkAt(rx, ry))
+		if (!isChunk(rx, ry))
 		{
 			Chunk chunk = new Chunk(this, rx, ry);
 
@@ -269,8 +275,8 @@ public class Map extends JTileMap
 	{
 		int tileSize    = Tile.getTileSize();
 		
-		int chunkWidth  = Chunk.getWidth();
-		int chunkHeight = Chunk.getHeight();
+		int chunkWidth  = getChunkPixelWidth();
+		int chunkHeight = getChunkPixelHeight();
 		
 		int width  = Frame.getWidth()  + chunkWidth;
 		int height = Frame.getHeight() + chunkHeight;
@@ -306,7 +312,7 @@ public class Map extends JTileMap
 					ry--;
 				}
 				
-				if (!isChunkAt(rx, ry))
+				if (!isChunk(rx, ry))
 				{
 					Chunk chunk = new Chunk(this, rx, ry);
 					
@@ -357,7 +363,7 @@ public class Map extends JTileMap
 		
 		y %= Chunk.CHUNK_SIZE;
 		
-		return isChunkAt(rx, ry);
+		return isChunk(rx, ry);
 	}
 	
 	/**
@@ -386,7 +392,7 @@ public class Map extends JTileMap
 		
 		y %= Chunk.CHUNK_SIZE;
 		
-		if (isChunkAt(rx, ry))
+		if (isChunk(rx, ry))
 		{
 			return getChunk(rx, ry);
 		}
@@ -418,7 +424,7 @@ public class Map extends JTileMap
 		rx = bounds.getWidth();
 		ry = bounds.getHeight();
 		
-		if (isChunkAt(rx, ry))
+		if (isChunk(rx, ry))
 		{
 			return getChunk(rx, ry);
 		}
@@ -555,7 +561,7 @@ public class Map extends JTileMap
 		rx = bounds.getWidth();
 		ry = bounds.getHeight();
 		
-		if (isChunkAt(rx, ry))
+		if (isChunk(rx, ry))
 		{
 			chunk = getChunk(rx, ry);
 			
@@ -590,7 +596,7 @@ public class Map extends JTileMap
 		
 		Chunk chunk = null;
 		
-		if (isChunkAt(rx, ry))
+		if (isChunk(rx, ry))
 		{
 			chunk = getChunk(rx, ry);
 			
@@ -625,7 +631,7 @@ public class Map extends JTileMap
 		rx = bounds.getWidth();
 		ry = bounds.getHeight();
 		
-		if (isChunkAt(rx, ry))
+		if (isChunk(rx, ry))
 		{
 			Chunk chunk = getChunk(rx, ry);
 			
@@ -659,7 +665,7 @@ public class Map extends JTileMap
 		rx = bounds.getWidth();
 		ry = bounds.getHeight();
 		
-		if (isChunkAt(rx, ry))
+		if (isChunk(rx, ry))
 		{
 			Chunk chunk = getChunk(rx, ry);
 			
@@ -687,7 +693,7 @@ public class Map extends JTileMap
 		rx = bounds.getWidth();
 		ry = bounds.getHeight();
 		
-		if (isChunkAt(rx, ry))
+		if (isChunk(rx, ry))
 		{
 			Chunk chunk = getChunk(rx, ry);
 			
@@ -695,68 +701,68 @@ public class Map extends JTileMap
 		}
 	}
 	
-	/**
-	 * Trim the specified location to the correct relative location
-	 * and local location.
-	 * 
-	 * @param x The local horizontal location relative to the relative
-	 * 		location (tile-wise).
-	 * @param y The local vertical location relative to the relative
-	 * 		location (tile-wise).
-	 * @param rx The relative horizontal location of the Chunk
-	 * 		(Chunk-wise).
-	 * @param ry The relative vertical location of the Chunk
-	 * 		(Chunk-wise).
-	 * @return A Bounds instance describing the trimmed (x, y, rx, ry)
-	 * 		values.
-	 */
-	public static Bounds trimLocation(int x, int y, int rx, int ry)
-	{
-		int cs = Chunk.CHUNK_SIZE;
-		
-		if (x < 0)
-		{
-			rx -= (-x / cs) + 1;
-			
-			x = cs - (-x % cs);
-			
-			if (x == 32)
-			{
-				x = 0;
-				
-				rx++;
-			}
-		}
-		else
-		{
-			rx += x / cs;
-			
-			x %= cs;
-		}
-		
-		if (y < 0)
-		{
-			ry -= (-y / cs) + 1;
-			
-			y = cs - (-y % cs);
-			
-			if (y == 32)
-			{
-				y = 0;
-				
-				ry++;
-			}
-		}
-		else
-		{
-			ry += y / cs;
-			
-			y %= cs;
-		}
-		
-		
-		return new Bounds(x, y, rx, ry);
-	}
+//	/**
+//	 * Trim the specified location to the correct relative location
+//	 * and local location.
+//	 * 
+//	 * @param x The local horizontal location relative to the relative
+//	 * 		location (tile-wise).
+//	 * @param y The local vertical location relative to the relative
+//	 * 		location (tile-wise).
+//	 * @param rx The relative horizontal location of the Chunk
+//	 * 		(Chunk-wise).
+//	 * @param ry The relative vertical location of the Chunk
+//	 * 		(Chunk-wise).
+//	 * @return A Bounds instance describing the trimmed (x, y, rx, ry)
+//	 * 		values.
+//	 */
+//	public Bounds trimLocation(int x, int y, int rx, int ry)
+//	{
+//		int cs = Chunk.CHUNK_SIZE;
+//		
+//		if (x < 0)
+//		{
+//			rx -= (-x / cs) + 1;
+//			
+//			x = cs - (-x % cs);
+//			
+//			if (x == 32)
+//			{
+//				x = 0;
+//				
+//				rx++;
+//			}
+//		}
+//		else
+//		{
+//			rx += x / cs;
+//			
+//			x %= cs;
+//		}
+//		
+//		if (y < 0)
+//		{
+//			ry -= (-y / cs) + 1;
+//			
+//			y = cs - (-y % cs);
+//			
+//			if (y == 32)
+//			{
+//				y = 0;
+//				
+//				ry++;
+//			}
+//		}
+//		else
+//		{
+//			ry += y / cs;
+//			
+//			y %= cs;
+//		}
+//		
+//		
+//		return new Bounds(x, y, rx, ry);
+//	}
 	
 //	/**
 //	 * Calculate the correct relative location given the information.

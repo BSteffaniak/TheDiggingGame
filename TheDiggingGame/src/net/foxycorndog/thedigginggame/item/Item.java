@@ -7,6 +7,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import net.foxycorndog.jbiscuit.item.JItem;
+import net.foxycorndog.jbiscuit.item.JItemContainer;
 import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 
@@ -30,9 +31,10 @@ public class Item extends JItem
 	 * @param stackSize The amount of specific Item instances can be
 	 * 		stacked in one Inventory Slot before filling the Slot to
 	 * 		its max.
+	 * @param container The JItemContainer to add the Item to.
 	 */
-	public Item(String name, int x, int y, int cols, int rows, int stackSize)
+	public Item(String name, int x, int y, int cols, int rows, int stackSize, JItemContainer container)
 	{
-		super(name, x, y, cols, rows, stackSize);
+		super(name, x, y, cols, rows, stackSize, container);
 	}
 }

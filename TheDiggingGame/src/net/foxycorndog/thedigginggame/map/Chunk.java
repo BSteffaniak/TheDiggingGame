@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import net.foxycorndog.jbiscuit.item.tile.JTile;
 import net.foxycorndog.jbiscuit.map.JImageTileChunk;
 import net.foxycorndog.jbiscuit.map.JTileChunk;
 import net.foxycorndog.jfoxylib.Frame;
@@ -34,23 +35,23 @@ import net.foxycorndog.thedigginggame.map.terrain.TerrainMap;
  * @version Mar 3, 2013 at 4:51:19 PM
  * @version	v0.1
  */
-public class Chunk extends JImageTileChunk
+public class Chunk extends JTileChunk
 {
-	private					boolean				generated, generating;
+	private boolean			generated, generating;
 	
-	private					int					level;
+	private int				level;
 	
-	private					NoiseMap			noiseMap;
+	private NoiseMap		noiseMap;
 	
-	private					TerrainMap			terrainMap;
+	private TerrainMap		terrainMap;
 
-	public	static	final	int					CHUNK_SIZE			= 32;
-	public	static	final	int					LAYER_COUNT			= CHUNK_SIZE * CHUNK_SIZE;
-	public	static	final	int					VERTEX_SIZE			= 2;
-	public	static	final	int					TILE_COUNT			= LAYER_COUNT * 3;
-	public	static	final	int					CHUNK_VERT_COUNT	= TILE_COUNT * 3 * 2 * 3;
-	public	static	final	int					BACKGROUND			= 0, MIDDLEGROUND = 1, FOREGROUND = 2;
-	public	static	final	int					LIGHT				= 0, COLOR = 1, OUTPUT = 2;
+	public static final int	CHUNK_SIZE			= 32;
+	public static final int	LAYER_COUNT			= CHUNK_SIZE * CHUNK_SIZE;
+	public static final int	VERTEX_SIZE			= 2;
+	public static final int	TILE_COUNT			= LAYER_COUNT * 3;
+	public static final int	CHUNK_VERT_COUNT	= TILE_COUNT * 3 * 2 * 3;
+	public static final int	BACKGROUND			= 0, MIDDLEGROUND = 1, FOREGROUND = 2;
+	public static final int	LIGHT				= 0, COLOR = 1, OUTPUT = 2;
 	
 	/**
 	 * Constructs a Chunk in the specified Map at the specified relative
@@ -206,6 +207,51 @@ public class Chunk extends JImageTileChunk
 		generating = false;
 	}
 	
+	/**
+	 * Adds a Tile to the newTile queue. The update() method has to be
+	 * called after this call to update the Buffers.
+	 * 
+	 * @param tile The tile to add to the queue.
+	 * @param x The horizontal location of the new Tile.
+	 * 		(0 - CHUNK_SIZE-1)
+	 * @param y The vertical location of the new Tile.
+	 * 		(0 - CHUNK_SIZE-1)
+	 * @return Whether a Tile was successfully added or not.
+	 * 
+	 * @see net.foxycorndog.jbiscuit.map.JTileChunk#addTile(net.foxycorndog.jbiscuit.item.tile.JTile, int, int, int, boolean)
+	 */
+	public boolean addTile(JTile tile, int x, int y, int layer, boolean replace)
+	{
+		boolean added = super.addTile(tile, x, y, layer, replace);
+		
+		if (added)
+		{
+			if (tile instanceof Tile)
+			{
+				Tile t = (Tile)tile;
+				
+				if (t.emitsLight())
+				{
+					emitLight(x, y, t.getLight());
+				}
+			}
+			else if (tile == null)
+			{
+				Tile oldTile = (Tile)getTile(x, y, layer);
+				
+				if (oldTile.emitsLight())
+				{
+					emitLight(x, y, -oldTile.getLight());
+				}
+			}
+		}
+		
+		return added;
+	}
+	
+	/**
+	 * @see net.foxycorndog.jbiscuit.map.JChunk#getMap()
+	 */
 	public Map getMap()
 	{
 		return (Map)super.getMap();

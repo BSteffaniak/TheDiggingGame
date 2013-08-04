@@ -156,7 +156,7 @@ public class TerrainMap
 	private void generateVeins(Chunk chunk)
 	{
 		//TODO: fix this for the individual locations.
-		Bounds bounds = Map.trimLocation(0, 0, chunk.getRelativeX(), chunk.getRelativeY());
+		Bounds bounds = chunk.getMap().trimLocation(0, 0, chunk.getRelativeX(), chunk.getRelativeY());
 		
 		for (int y = 0; y < height; y++)
 		{

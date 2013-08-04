@@ -67,7 +67,7 @@ public class ChatBox
 //		int     height  = Math.round(font.getGlyphHeight() * scale[1] * (1 / 0.8f));
 		
 		textFieldImage = new Image(null);
-		textFieldImage.setImage(white);
+		textFieldImage.setTexture(white);
 		textFieldImage.setSize(Frame.getWidth() - 20, 0);
 		
 		textField = new TextField(null);
@@ -77,11 +77,11 @@ public class ChatBox
 		textField.setCaretChar('_');
 		
 		historyBackground = new Image(null);
-		historyBackground.setImage(white);
+		historyBackground.setTexture(white);
 		historyBackground.setLocation(10, textField.getY() + textField.getHeight() + 50);
 		
 		messageBackground = new Image(null);
-		messageBackground.setImage(white);
+		messageBackground.setTexture(white);
 		
 		updateSizes();
 		

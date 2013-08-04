@@ -38,18 +38,18 @@ public class OptionsMenu extends Menu
 	
 	private VideoOptionsMenu	videoOptionsMenu;
 	
-	private Launcher			launcher;
+	private MainMenu			mainMenu;
 	
 	/**
 	 * Create an OptionsMenu.
 	 * 
 	 * @param parent The parent Panel of this OptionsMenu.
 	 */
-	public OptionsMenu(final Launcher launcher, Font font, Panel parent)
+	public OptionsMenu(final Launcher launcher, final MainMenu mainMenu, Font font, Panel parent)
 	{
 		super(parent);
 		
-		this.launcher = launcher;
+		this.mainMenu = mainMenu;
 		
 		this.font     = font;
 		
@@ -83,7 +83,7 @@ public class OptionsMenu extends Menu
 				}
 				else if (event.getSource() == backButton)
 				{
-					launcher.closeOptionsMenu();
+					mainMenu.closeOptionsMenu();
 				}
 			}
 			
@@ -109,7 +109,7 @@ public class OptionsMenu extends Menu
 		};
 		
 		playOfflineButton = new Button(this);
-		playOfflineButton.setImage(getLargeButtonImage());
+		playOfflineButton.setTexture(getLargeButtonImage());
 		playOfflineButton.setHoverImage(getLargeButtonHoverImage());
 		playOfflineButton.setFont(font);
 		playOfflineButton.setText(launcher.willPlayOffline() ? "Playing: Offline" : "Playing: Online");
@@ -118,7 +118,7 @@ public class OptionsMenu extends Menu
 		playOfflineButton.addButtonListener(listener);
 		
 		videoButton = new Button(this);
-		videoButton.setImage(getLargeButtonImage());
+		videoButton.setTexture(getLargeButtonImage());
 		videoButton.setHoverImage(getLargeButtonHoverImage());
 		videoButton.setFont(font);
 		videoButton.setText("Video");
@@ -127,7 +127,7 @@ public class OptionsMenu extends Menu
 		videoButton.addButtonListener(listener);
 		
 		backButton = new Button(this);
-		backButton.setImage(getLargeButtonImage());
+		backButton.setTexture(getLargeButtonImage());
 		backButton.setHoverImage(getLargeButtonHoverImage());
 		backButton.setFont(font);
 		backButton.setText("Back");
@@ -139,7 +139,7 @@ public class OptionsMenu extends Menu
 		
 		backgroundImage = new Image(this);
 		backgroundImage.setSize(max, max);
-		backgroundImage.setImage(getBackgroundImage(), 75, 75);
+		backgroundImage.setTexture(getBackgroundImage(), 75, 75);
 	}
 	
 	/**

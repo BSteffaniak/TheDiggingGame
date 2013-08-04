@@ -72,7 +72,7 @@ public class VideoOptionsMenu extends Menu
 		};
 		
 		vSyncButton = new Button(this);
-		vSyncButton.setImage(getLargeButtonImage());
+		vSyncButton.setTexture(getLargeButtonImage());
 		vSyncButton.setHoverImage(getLargeButtonHoverImage());
 		vSyncButton.setFont(font);
 		vSyncButton.setText(Frame.isVSyncEnabled() ? "VSync: On" : "VSync: Off");
@@ -81,7 +81,7 @@ public class VideoOptionsMenu extends Menu
 		vSyncButton.addButtonListener(listener);
 		
 		backButton = new Button(this);
-		backButton.setImage(getLargeButtonImage());
+		backButton.setTexture(getLargeButtonImage());
 		backButton.setHoverImage(getLargeButtonHoverImage());
 		backButton.setFont(font);
 		backButton.setText("Back");
@@ -93,6 +93,6 @@ public class VideoOptionsMenu extends Menu
 		
 		backgroundImage = new Image(this);
 		backgroundImage.setSize(max, max);
-		backgroundImage.setImage(getBackgroundImage(), 75, 75);
+		backgroundImage.setTexture(getBackgroundImage(), 75, 75);
 	}
 }

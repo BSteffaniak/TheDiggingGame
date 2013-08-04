@@ -55,7 +55,6 @@ public class Launcher extends GameStarter
 	private Font				font;
 
 	private MainMenu			mainMenu;
-	private OptionsMenu			optionsMenu;
 	private DialogMenu			updateMenu, playOfflineMenu;
 
 	private DialogMenuListener	dialogMenuListener;
@@ -302,28 +301,6 @@ public class Launcher extends GameStarter
 	}
 	
 	/**
-	 * Opens the OptionsMenu so you can edit the game preferences.
-	 */
-	public void openOptionsMenu()
-	{
-		playGame    = false;
-		optionsMenu = new OptionsMenu(this, font, null);
-		
-		mainMenu.setVisible(false);
-	}
-	
-	/**
-	 * Closes the OptionsMenu and returns you to the previous menu.
-	 */
-	public void closeOptionsMenu()
-	{
-		optionsMenu.dispose();
-		optionsMenu = null;
-		
-		mainMenu.setVisible(true);
-	}
-	
-	/**
 	 * Returns whether the game will play offline when started or not.
 	 * 
 	 * @return Whether the game will play offline when started or not.
@@ -444,7 +421,7 @@ public class Launcher extends GameStarter
 	 */
 	public void render2D()
 	{
-		if (updateMenu != null || mainMenu != null || playOfflineMenu != null || optionsMenu != null)
+		if (updateMenu != null || mainMenu != null || playOfflineMenu != null)
 		{
 			GL.scale(3, 3, 1);
 			
@@ -464,10 +441,6 @@ public class Launcher extends GameStarter
 			else if (updateMenu != null)
 			{
 				updateMenu.render();
-			}
-			else if (optionsMenu != null)
-			{
-				optionsMenu.render();
 			}
 			else if (mainMenu != null)
 			{
@@ -528,7 +501,7 @@ public class Launcher extends GameStarter
 	/**
 	 * Method that is called each time before the render methods.
 	 */
-	public void loop()
+	public void update()
 	{
 		Frame.setTitle(Frame.getFPS() + "");
 		
@@ -582,7 +555,7 @@ public class Launcher extends GameStarter
 				
 				if (playGame)
 				{
-					if (connectionSuccessful || playOffline)
+					if (playGame && (connectionSuccessful || playOffline))
 					{
 //						gameInterface.init(!playOffline, resourcesLocation);
 //						
@@ -612,15 +585,12 @@ public class Launcher extends GameStarter
 						
 						playGame = false;
 					}
-					else
+					else if (playOfflineMenu == null && !playOfflineAnswered)
 					{
-						if (playOfflineMenu == null && !playOfflineAnswered)
-						{
-							playOfflineMenu = new DialogMenu("Could not connect to the server.\nWould you like to play offline?", font, null);
-							playOfflineMenu.addDialogMenuListener(dialogMenuListener);
-							
-							mainMenu.setVisible(false);
-						}
+						playOfflineMenu = new DialogMenu("Could not connect to the server.\nWould you like to play offline?", font, null);
+						playOfflineMenu.addDialogMenuListener(dialogMenuListener);
+						
+						mainMenu.setVisible(false);
 					}
 				}
 			}

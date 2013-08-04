@@ -12,7 +12,9 @@ import java.net.URLClassLoader;
 import javax.imageio.ImageIO;
 
 import net.foxycorndog.jbiscuit.item.JItem;
-import net.foxycorndog.jbiscuit.item.JTile;
+import net.foxycorndog.jbiscuit.item.JItemContainer;
+import net.foxycorndog.jbiscuit.item.tile.JTile;
+import net.foxycorndog.jbiscuit.item.tile.JTileContainer;
 import net.foxycorndog.jfoxylib.Display;
 import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.GameStarter;
@@ -54,30 +56,33 @@ import net.foxycorndog.thedigginggame.map.Map;
  */
 public class TheDiggingGame
 {
-	private					boolean			online;
-	private					boolean			tilePlaced;
+	private boolean				online;
+	private boolean				tilePlaced;
 	
-	private					int				fps;
-	private					int				editing;
-	private					int				counter;
-	private					int				oldCursorX, oldCursorY;
-	private					int				oldEditing;
+	private int					fps;
+	private int					editing;
+	private int					counter;
+	private int					oldCursorX, oldCursorY;
+	private int					oldEditing;
 	
-	private					float			mapScale, guiScale;
+	private float				mapScale, guiScale;
 	
-	private					Cursor			cursor;
+	private JItemContainer		itemContainer;
+	private JTileContainer		tileContainer;
 	
-	private					ChatBox			chatBox;
+	private Cursor				cursor;
 	
-	private					Player			player;
+	private ChatBox				chatBox;
 	
-	private					Map				map;
+	private Player				player;
 	
-	private	static			String			resourcesLocation;
+	private Map					map;
 	
-	private	static			Font			font;
+	private static String		resourcesLocation;
 	
-	public	static	final	String			VERSION	= "0.4";
+	private static Font			font;
+	
+	public static final String	VERSION	= "0.4";
 	
 	/**
 	 * Main method for the game. First method ran.
@@ -187,7 +192,7 @@ public class TheDiggingGame
 	 */
 	public void startGame()
 	{
-		map = new Map(this);
+		map = new Map(this, tileContainer);
 
 //		map.load("world");
 		map.generateChunk(0, 0, new Thread()
@@ -198,7 +203,7 @@ public class TheDiggingGame
 			}
 		});
 
-		player = new Player(map);
+		player = new Player(map, tileContainer);
 		player.setFocused(true);
 		player.getInventory().setEnabled(false);
 		player.setName("Player");
@@ -243,9 +248,11 @@ public class TheDiggingGame
 			e.printStackTrace();
 		}
 		
-		JItem.setSprites(sprites);
-		JTile.setSprites(sprites);
-		JTile.setTileSize(16);
+		itemContainer = new JItemContainer(16, 16);
+		itemContainer.setSpriteSheet(sprites);
+		
+		tileContainer = new JTileContainer(16, 16);
+		tileContainer.setSpriteSheet(sprites);
 		
 //		map = new Map(this);
 //		
@@ -368,8 +375,8 @@ public class TheDiggingGame
 		
 		if (player.getInventory().isOpen())
 		{
-			float x = Frame.getWidth()  / 2 - player.getInventory().getBackgroundImage().getWidth()  / 2;
-			float y = Frame.getHeight() / 2 - player.getInventory().getBackgroundImage().getHeight() / 2;
+			float x = Frame.getWidth()  / 2 - player.getInventory().getBackgroundImage().getScaledWidth()  / 2;
+			float y = Frame.getHeight() / 2 - player.getInventory().getBackgroundImage().getScaledHeight() / 2;
 			
 			GL.pushMatrix();
 			{
@@ -590,8 +597,8 @@ public class TheDiggingGame
 		x -= map.getX() / tileSize;
 		y -= map.getY() / tileSize;
 		
-		int finalX = (int)Math.round(x);
-		int finalY = (int)Math.round(y);
+		int finalX = Math.round(x);
+		int finalY = Math.round(y);
 		
 		cursor.setLocation(finalX, finalY);
 	}

@@ -18,6 +18,7 @@ import net.foxycorndog.jfoxylib.events.ButtonListener;
 import net.foxycorndog.jfoxylib.events.FrameEvent;
 import net.foxycorndog.jfoxylib.events.FrameListener;
 import net.foxycorndog.jfoxylib.font.Font;
+import net.foxycorndog.thedigginggame.launcher.Launcher;
 import net.foxycorndog.thedigginggame.launcher.events.DialogMenuEvent;
 import net.foxycorndog.thedigginggame.launcher.events.DialogMenuListener;
 
@@ -66,9 +67,9 @@ public class DialogMenu extends Menu
 		
 		try
 		{
-			smallButtonImage      = ImageIO.read(new File("res/images/GUI/SmallButton.png"));
-			smallButtonHoverImage = ImageIO.read(new File("res/images/GUI/SmallButtonHover.png"));
-			background            = ImageIO.read(new File("res/images/background.png"));
+			smallButtonImage      = ImageIO.read(new File(Launcher.getResourcesLocation() + "res/images/GUI/SmallButton.png"));
+			smallButtonHoverImage = ImageIO.read(new File(Launcher.getResourcesLocation() + "res/images/GUI/SmallButtonHover.png"));
+			background            = ImageIO.read(new File(Launcher.getResourcesLocation() + "res/images/background.png"));
 		}
 		catch (IOException e)
 		{
@@ -88,7 +89,7 @@ public class DialogMenu extends Menu
 		});
 		
 		yesButton = new Button(this);
-		yesButton.setImage(smallButtonImage);
+		yesButton.setTexture(smallButtonImage);
 		yesButton.setHoverImage(smallButtonHoverImage);
 		yesButton.setFont(font);
 		yesButton.setText("Yes");
@@ -96,7 +97,7 @@ public class DialogMenu extends Menu
 		yesButton.setLocation(-50, -10);
 		
 		noButton = new Button(this);
-		noButton.setImage(smallButtonImage);
+		noButton.setTexture(smallButtonImage);
 		noButton.setHoverImage(smallButtonHoverImage);
 		noButton.setFont(font);
 		noButton.setText("No");
@@ -105,7 +106,7 @@ public class DialogMenu extends Menu
 		
 		backgroundImage = new Image(this);
 		backgroundImage.setSize(max, max);
-		backgroundImage.setImage(background, 75, 75);
+		backgroundImage.setTexture(background, 75, 75);
 		
 		ButtonListener buttonListener = new ButtonListener()
 		{
