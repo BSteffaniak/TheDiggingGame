@@ -42,7 +42,7 @@ public abstract class Menu extends Panel
 			smallButtonHoverImage = ImageIO.read(new File(res + "res/images/GUI/SmallButtonHover.png"));
 			largeButtonImage      = ImageIO.read(new File(res + "res/images/GUI/Button.png"));
 			largeButtonHoverImage = ImageIO.read(new File(res + "res/images/GUI/ButtonHover.png"));
-			backgroundImage            = ImageIO.read(new File(res + "res/images/background.png"));
+			backgroundImage            = ImageIO.read(new File(res + "res/images/Background.png"));
 		}
 		catch (IOException e)
 		{

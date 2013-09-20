@@ -142,9 +142,9 @@ public class MainMenu extends Menu
 		{
 			String res = Launcher.getResourcesLocation();
 			
-			normalImage = ImageIO.read(new File(res + "res/images/GUI/button.png"));
-			hoverImage  = ImageIO.read(new File(res + "res/images/GUI/buttonhover.png"));
-			background  = ImageIO.read(new File(res + "res/images/background.png"));
+			normalImage = ImageIO.read(new File(res + "res/images/GUI/Button.png"));
+			hoverImage  = ImageIO.read(new File(res + "res/images/GUI/ButtonHover.png"));
+			background  = ImageIO.read(new File(res + "res/images/Background.png"));
 		}
 		catch (IOException e)
 		{

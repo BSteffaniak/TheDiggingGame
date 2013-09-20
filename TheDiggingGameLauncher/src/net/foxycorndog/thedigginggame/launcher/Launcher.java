@@ -74,7 +74,7 @@ public class Launcher extends GameStarter
 	
 	private static	final	String locateResources()
 	{
-		String resLoc = "../thedigginggame";
+		String resLoc = "../TheDiggingGame";
 		
 		try
 		{
@@ -187,7 +187,7 @@ public class Launcher extends GameStarter
 					if (debug)
 					{
 						jarName   = "";
-						parentDir = "../thedigginggame/bin/";
+						parentDir = "../TheDiggingGame/bin/";
 					}
 					else
 					{

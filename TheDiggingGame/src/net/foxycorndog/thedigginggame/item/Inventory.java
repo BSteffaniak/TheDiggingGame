@@ -42,7 +42,7 @@ public class Inventory extends JInventory
 			
 		try
 		{
-			SpriteSheet playerInventorySprites = new SpriteSheet(TheDiggingGame.getResourcesLocation() + "res/images/gui/PlayerInventory.png", 256, 256);
+			SpriteSheet playerInventorySprites = new SpriteSheet(TheDiggingGame.getResourcesLocation() + "res/images/GUI/PlayerInventory.png", 256, 256);
 			
 			PLAYER_INVENTORY_IMAGE.setSpriteX(6);
 			PLAYER_INVENTORY_IMAGE.setSpriteY(32);

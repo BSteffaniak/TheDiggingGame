@@ -103,7 +103,7 @@ public class TheDiggingGame
 			if (debug)
 			{
 				jarName   = "";
-				parentDir = "../thedigginggamelauncher/bin/";
+				parentDir = "../TheDiggingGameLauncher/bin/";
 //				parentDir = "../thedigginggame/bin/";
 			}
 			
@@ -241,7 +241,7 @@ public class TheDiggingGame
 		
 		try
 		{
-			sprites = new SpriteSheet(TheDiggingGame.getResourcesLocation() + "res/images/texturepacks/16/minecraft/terrain.png", cols, rows);
+			sprites = new SpriteSheet(TheDiggingGame.getResourcesLocation() + "res/images/texturepacks/16/Minecraft/terrain.png", cols, rows);
 		}
 		catch (IOException e)
 		{
