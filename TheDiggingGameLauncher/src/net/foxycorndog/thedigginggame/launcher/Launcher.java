@@ -22,6 +22,7 @@ import net.foxycorndog.jfoxylib.web.WebPage;
 import net.foxycorndog.jfoxylib.openal.Sound;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.util.FileUtils;
+import net.foxycorndog.jfoxylib.util.ResourceLocator;
 import net.foxycorndog.thedigginggame.launcher.events.DialogMenuEvent;
 import net.foxycorndog.thedigginggame.launcher.events.DialogMenuListener;
 import net.foxycorndog.thedigginggame.launcher.menu.MainMenu;
@@ -74,13 +75,13 @@ public class Launcher extends GameStarter
 	
 	private static	final	String locateResources()
 	{
-		String resLoc = "../thedigginggame";
+		String resLoc = null;
 		
 		try
 		{
 			if (debug)
 			{
-				resLoc = new File(resLoc).getCanonicalPath();
+				resLoc = new File("../thedigginggame").getCanonicalPath();
 			}
 			else
 			{
@@ -100,6 +101,8 @@ public class Launcher extends GameStarter
 					
 					resLoc = parent.getCanonicalPath();
 				}
+				
+				resLoc += "/TheDiggingGame/";
 			}
 		}
 		catch (URISyntaxException e)
@@ -113,6 +116,8 @@ public class Launcher extends GameStarter
 		
 		resLoc = resLoc.replace("\\", "/");
 		resLoc = FileUtils.removeEndingSlashes(resLoc) + "/";
+		
+		ResourceLocator.setNativesLocation(resLoc);
 		
 		return resLoc;
 	}
@@ -191,7 +196,8 @@ public class Launcher extends GameStarter
 					}
 					else
 					{
-						
+						jarName   = "";
+						parentDir = "thedigginggame/bin/";
 					}
 					
 					URL urls[] = new URL[]

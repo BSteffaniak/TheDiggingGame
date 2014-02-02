@@ -50,9 +50,9 @@ import net.foxycorndog.thedigginggame.map.Map;
  * 
  * @author	Braden Steffaniak
  * @since	Feb 22, 2013 at 4:23:04 AM
- * @since	v0.1
+ * @since	v0.4
  * @version Feb 22, 2013 at 4:23:04 AM
- * @version	v0.1
+ * @version	v0.4
  */
 public class TheDiggingGame
 {

@@ -17,7 +17,7 @@ import net.foxycorndog.jfoxylib.opengl.texture.Texture;
 import net.foxycorndog.jfoxylib.util.Bounds;
 import net.foxycorndog.jfoxylib.util.Intersects;
 import net.foxycorndog.jfoxylib.util.Point;
-import net.foxycorndog.jfoxyutil.Queue;
+import net.foxycorndog.jfoxylib.util.Queue;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.actor.Actor;
 import net.foxycorndog.thedigginggame.item.tile.Tile;

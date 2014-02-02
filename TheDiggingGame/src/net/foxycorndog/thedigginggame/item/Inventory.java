@@ -18,7 +18,7 @@ import net.foxycorndog.jfoxylib.input.Mouse;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
-import net.foxycorndog.jfoxyutil.Queue;
+import net.foxycorndog.jfoxylib.util.Queue;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.item.tile.Tile;
 

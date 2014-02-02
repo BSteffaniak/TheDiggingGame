@@ -16,6 +16,7 @@ import net.foxycorndog.jbiscuit.actor.JActor;
 import net.foxycorndog.jbiscuit.item.tile.JTileContainer;
 import net.foxycorndog.jbiscuit.map.JChunk;
 import net.foxycorndog.jbiscuit.map.JTileMap;
+import net.foxycorndog.jfoxylib.Color;
 import net.foxycorndog.jfoxylib.Frame;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
@@ -23,7 +24,7 @@ import net.foxycorndog.jfoxylib.opengl.shader.Shader;
 import net.foxycorndog.jfoxylib.util.Bounds;
 import net.foxycorndog.jfoxylib.util.Intersects;
 import net.foxycorndog.jfoxylib.util.Point;
-import net.foxycorndog.jfoxyutil.Queue;
+import net.foxycorndog.jfoxylib.util.Queue;
 import net.foxycorndog.thedigginggame.TheDiggingGame;
 import net.foxycorndog.thedigginggame.actor.Actor;
 import net.foxycorndog.thedigginggame.item.tile.Tile;
@@ -42,6 +43,8 @@ public class Map extends JTileMap
 {
 	private boolean				collision;
 	private	boolean				generatingChunks;
+	
+	private DayCycle			dayCycle;
 	
 	private TheDiggingGame		game;
 	
@@ -160,6 +163,15 @@ public class Map extends JTileMap
 //		
 //		lightingThread.setPriority(Thread.MIN_PRIORITY);
 //		lightingThread.start();
+		
+		try
+		{
+			dayCycle = new DayCycle(TheDiggingGame.getResourcesLocation() + "res/images/DayCycle.png");
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -479,6 +491,10 @@ public class Map extends JTileMap
 //			});
 		}
 		GL.popMatrix();
+		
+		Color dayColor = dayCycle.getCurrentColor();
+		
+		GL.setClearColor(dayColor);
 	}
 	
 	/**
@@ -1009,6 +1025,8 @@ public class Map extends JTileMap
 	 */
 	public void update(final float delta)
 	{
+		dayCycle.update(delta);
+		
 		if (!chunkQueue.isEmpty())
 		{
 			return;
